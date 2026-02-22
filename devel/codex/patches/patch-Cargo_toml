@@ -1,0 +1,42 @@
+Use local checkouts for git/branch cargo patches so builds remain offline.
+
+Index: codex-rs/Cargo.toml
+--- codex-rs/Cargo.toml.orig
++++ codex-rs/Cargo.toml
+@@ -196,7 +196,7 @@
+ mime_guess = "2.0.5"
+ multimap = "0.10.0"
+ notify = "8.2.0"
+-nucleo = { git = "https://github.com/helix-editor/nucleo.git", rev = "4253de9faabb4e5c6d81d946a5e35a90f87347ee" }
++nucleo = { path = "../../nucleo" }
+ once_cell = "1.20.2"
+ openssl-sys = "*"
+ opentelemetry = "0.31.0"
+@@ -219,7 +219,7 @@
+ regex-lite = "0.1.8"
+ reqwest = "0.12"
+ rmcp = { version = "0.15.0", default-features = false }
+-runfiles = { git = "https://github.com/dzbarsky/rules_rust", rev = "b56cbaa8465e74127f1ea216f813cd377295ad81" }
++runfiles = { path = "../../rules_rust/rust/runfiles" }
+ rustls = { version = "0.23", default-features = false, features = [
+     "ring",
+     "std",
+@@ -362,13 +362,13 @@
+ [patch.crates-io]
+ # Uncomment to debug local changes.
+ # ratatui = { path = "../../ratatui" }
+-crossterm = { git = "https://github.com/nornagon/crossterm", branch = "nornagon/color-query" }
+-ratatui = { git = "https://github.com/nornagon/ratatui", branch = "nornagon-v0.29.0-patch" }
+-tokio-tungstenite = { git = "https://github.com/openai-oss-forks/tokio-tungstenite", rev = "132f5b39c862e3a970f731d709608b3e6276d5f6" }
+-tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "9200079d3b54a1ff51072e24d81fd354f085156f" }
++crossterm = { path = "../../crossterm" }
++ratatui = { path = "../../ratatui" }
++tokio-tungstenite = { path = "../../tokio-tungstenite" }
++tungstenite = { path = "../../tungstenite-rs" }
+ 
+ # Uncomment to debug local changes.
+ # rmcp = { path = "../../rust-sdk/crates/rmcp" }
+ 
+ [patch."ssh://git@github.com/openai-oss-forks/tungstenite-rs.git"]
+-tungstenite = { git = "https://github.com/openai-oss-forks/tungstenite-rs", rev = "9200079d3b54a1ff51072e24d81fd354f085156f" }
++tungstenite = { path = "../../tungstenite-rs" }

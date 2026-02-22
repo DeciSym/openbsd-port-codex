@@ -1,0 +1,4 @@
+bin/codex
+bin/codex-mcp-server
+bin/codex-stdio-to-uds
+bin/codex-file-search
