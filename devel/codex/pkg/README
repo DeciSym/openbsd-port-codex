@@ -11,3 +11,35 @@ path explicitly.
 
 Reference:
 https://github.com/rust-lang/rust/issues/60560
+
++-------------------------------------------------------------------------------
+| Codex on OpenBSD: optional companion tools
++-------------------------------------------------------------------------------
+
+The package is intentionally minimal. Some model-requested workflows may work
+better if you install additional packages:
+
+- shells/bash
+  Why: Codex shell guidance commonly uses bash-style invocation and non-macOS
+  shell fallback preference checks bash before zsh/sh.
+  Source rationale: codex-rs/core/src/tools/spec.rs and codex-rs/core/src/shell.rs
+
+- textproc/ripgrep
+  Why: the grep_files tool executes `rg` directly; without ripgrep, that tool
+  call returns an explicit runtime error.
+  Source rationale: codex-rs/core/src/tools/handlers/grep_files.rs
+
+- devel/git
+  Why: git-aware helpers and repository metadata features degrade when git is
+  not present, though Codex itself can still run.
+  Source rationale: codex-rs/core/src/git_info.rs
+
++-------------------------------------------------------------------------------
+| Codex on OpenBSD: upstream feature flags
++-------------------------------------------------------------------------------
+
+Upstream codex-rs includes many feature flags, with several disabled by default
+and some platform-specific or under development (see codex-rs/core/src/features.rs).
+
+Future OpenBSD packaging work may expose selected feature sets as variants
+or split packages when they are stable and have clear dependency boundaries.
