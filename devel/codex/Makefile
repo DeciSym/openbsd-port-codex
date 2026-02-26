@@ -1,6 +1,6 @@
 COMMENT =	OpenAI Codex command-line coding agent
 
-V =		0.104.0
+V =		0.105.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -32,6 +32,8 @@ MAINTAINER =	Donald Anthony Pellegrino Jr., Ph.D. <don@decisym.ai>
 # Apache-2.0
 PERMIT_PACKAGE =	Yes
 
+FLAVORS =	all_features
+
 WANTLIB +=	${MODCARGO_WANTLIB} dbus-1 lzma m
 
 MODULES =	devel/cargo
@@ -44,13 +46,22 @@ SEPARATE_BUILD =	Yes
 MODCARGO_CRATES_KEEP +=	libsqlite3-sys
 MODCARGO_CRATES_KEEP +=	zstd-sys
 MODCARGO_BUILD_ARGS +=	--ignore-rust-version
-MODCARGO_INSTALL_ARGS +=	--ignore-rust-version
 MODCARGO_TEST_ARGS +=	--ignore-rust-version
 
-MODCARGO_INSTALL_TARGET_PATHS +=	cli
-MODCARGO_INSTALL_TARGET_PATHS +=	mcp-server
-MODCARGO_INSTALL_TARGET_PATHS +=	stdio-to-uds
-MODCARGO_INSTALL_TARGET_PATHS +=	file-search
+.if !empty(FLAVOR:Mall_features)
+MODCARGO_BUILD_ARGS +=	--all-features
+MODCARGO_TEST_ARGS +=	--all-features
+.endif
+
+CODEX_BINS =	codex codex-mcp-server codex-stdio-to-uds codex-file-search
+
+# Install the binaries built by `cargo build` directly to avoid
+# `cargo install` recompiling each target path during packaging.
+do-install:
+.for _b in ${CODEX_BINS}
+	${INSTALL_PROGRAM} ${MODCARGO_TARGET_DIR}/release/${_b} \
+		${PREFIX}/bin/${_b}
+.endfor
 
 pre-configure:
 	sed -i \
