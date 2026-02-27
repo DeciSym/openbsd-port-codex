@@ -6,7 +6,8 @@ On OpenBSD, Rust's std::env::current_exe() can fail to resolve the executable
 path when the command is invoked via PATH lookup.
 
 To avoid this issue, run Codex using a full path (for example,
-`/usr/local/bin/codex`) or define shell aliases/functions that invoke the full
+`${TRUEPREFIX}/bin/codex`) or define shell aliases/functions that
+invoke the full
 path explicitly.
 
 Reference:
@@ -22,7 +23,8 @@ better if you install additional packages:
 - shells/bash
   Why: Codex shell guidance commonly uses bash-style invocation and non-macOS
   shell fallback preference checks bash before zsh/sh.
-  Source rationale: codex-rs/core/src/tools/spec.rs and codex-rs/core/src/shell.rs
+  Source rationale: codex-rs/core/src/tools/spec.rs and
+  codex-rs/core/src/shell.rs
 
 - textproc/ripgrep
   Why: the grep_files tool executes `rg` directly; without ripgrep, that tool
@@ -39,7 +41,8 @@ better if you install additional packages:
 +-------------------------------------------------------------------------------
 
 Upstream codex-rs includes many feature flags, with several disabled by default
-and some platform-specific or under development (see codex-rs/core/src/features.rs).
+and some platform-specific or under development
+(see codex-rs/core/src/features.rs).
 
 Future OpenBSD packaging work may expose selected feature sets as variants
 or split packages when they are stable and have clear dependency boundaries.
