@@ -1,6 +1,6 @@
 COMMENT =	OpenAI Codex command-line coding agent
 
-V =		0.106.0
+V =		0.107.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
