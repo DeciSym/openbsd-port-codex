@@ -48,6 +48,8 @@ LIB_DEPENDS +=	archivers/bzip2
 LIB_DEPENDS +=	archivers/xz
 LIB_DEPENDS +=	textproc/oniguruma
 
+TEST_DEPENDS +=	shells/bash
+
 CONFIGURE_STYLE =	cargo
 SEPARATE_BUILD =	Yes
 MODCARGO_CRATES_KEEP +=	libsqlite3-sys
@@ -65,12 +67,10 @@ MODCARGO_TEST_ARGS +=	--all-features
 #
 # Excluded tests are narrow and OpenBSD-specific. The skip list below covers
 # runtime/package install checks that panic on openbsd-x86_64 artifact
-# detection, shell/exec tests with OpenBSD portability gaps, a few temporary
+# detection, a few remaining shell/exec OpenBSD portability gaps, temporary
 # codex-tui regressions, and one intermittent codex-utils-pty failure.
 #
 # Timeout cleanup tests currently return EPERM from killpg(2) on OpenBSD.
-# Shell snapshot path-override tests also assume bash lives under
-# ${LOCALBASE}/bin.
 #
 # codex-core full-session integration tests (suite::...) run in a separate pass
 # with tuned fd/thread settings so the rest of the workspace can stay parallel.
@@ -122,16 +122,7 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
 	${SPEC_TEST}test_build_specs_artifact_tool_enabled \
 	exec::tests::kill_child_process_group_kills_grandchildren_on_timeout \
-	exec::tests::process_exec_tool_call_respects_cancellation_token \
-	${SHELL_TEST}bash_snapshot_filters_invalid_exports \
-	${SHELL_TEST}bash_snapshot_preserves_multiline_exports \
-	${SHELL_TEST}snapshot_shell_does_not_inherit_stdin \
-	${SHELL_TEST}try_new_creates_and_deletes_snapshot_file \
-	${RUNTIME_WRAP_TEST}applies_explicit_path_override \
-	${RUNTIME_WRAP_TEST}does_not_embed_override_values_in_argv \
-	${RUNTIME_WRAP_TEST}keeps_snapshot_path_without_override \
-	${RUNTIME_WRAP_TEST}preserves_unset_override_variables \
-	${RUNTIME_WRAP_TEST}restores_explicit_override_precedence
+	exec::tests::process_exec_tool_call_respects_cancellation_token
 MODCARGO_TEST_ARGS +=	--skip ${_t}
 .endfor
 
