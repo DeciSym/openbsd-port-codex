@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.112.0
+V =		0.114.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -61,6 +61,7 @@ MODCARGO_TEST_ARGS +=	--ignore-rust-version
 MODCARGO_BUILD_ARGS +=	--all-features
 MODCARGO_TEST_ARGS +=	--all-features
 .endif
+MODCARGO_TEST_ARGS +=	--workspace --exclude codex-core --exclude codex-exec
 
 # Run workspace tests by default. Tests that require outbound network should
 # self-skip via skip_if_no_network! when this env var is present.
@@ -72,8 +73,6 @@ MODCARGO_TEST_ARGS +=	--all-features
 #
 # Timeout cleanup tests currently return EPERM from killpg(2) on OpenBSD.
 #
-# codex-core full-session integration tests (suite::...) run in a separate pass
-# with tuned fd/thread settings so the rest of the workspace can stay parallel.
 TEST_ENV +=	CODEX_SANDBOX_NETWORK_DISABLED=1
 MODCARGO_ENV +=	CODEX_SANDBOX_NETWORK_DISABLED=1
 
@@ -88,6 +87,7 @@ RUNTIME_TEST =	tools::runtimes::tests::
 ENSURE_TEST =	${CORE_TEST}ensure_installed_
 RUNTIME_WRAP_TEST =	${RUNTIME_TEST}maybe_wrap_shell_lc_with_snapshot_
 SHELL_TEST =	shell_snapshot::tests::
+INPROC_TEST =	in_process::tests::in_process_start_
 
 MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 		--skip ${UPDATES_TEST}extract_version_from_brew_api_json
@@ -121,56 +121,40 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${ENSURE_TEST}restores_previous_install_when_final_validation_fails \
 	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
 	${SPEC_TEST}test_build_specs_artifact_tool_enabled \
+	tests::typed_request_roundtrip_works \
+	tests::typed_request_reports_json_rpc_errors \
+	tests::caller_provided_session_source_is_applied \
+	tests::tiny_channel_capacity_still_supports_request_roundtrip \
+	${INPROC_TEST}initializes_and_handles_typed_v2_request \
+	${INPROC_TEST}uses_requested_session_source_for_thread_start \
+	${INPROC_TEST}clamps_zero_channel_capacity \
+	unix::escalate_server::tests::exec_closes_parent_socket_after_shell_spawn \
 	exec::tests::kill_child_process_group_kills_grandchildren_on_timeout \
 	exec::tests::process_exec_tool_call_respects_cancellation_token
 MODCARGO_TEST_ARGS +=	--skip ${_t}
 .endfor
 
-FULL_SESSION_TEST_ARGS =	--ignore-rust-version
+TARGETED_TEST_ARGS =	--ignore-rust-version
 .if !empty(FLAVOR:Mall_features)
-FULL_SESSION_TEST_ARGS +=	--all-features
+TARGETED_TEST_ARGS +=	--all-features
 .endif
 
-# Temporary OpenBSD full-session skips under parallel load are listed below.
-# They cover sqlite-state persistence, shell snapshots, user shell commands,
-# models cache TTL, memories, and otel tool-decision recording cases.
-FULL_SESSION_TEST_THREADS =	5
-FULL_SESSION_TEST_ENV =	RUST_TEST_THREADS=${FULL_SESSION_TEST_THREADS}
-SUITE_USC =	suite::user_shell_cmd::
-SUITE_USCC =	${SUITE_USC}user_shell_command_
-SUITE_SQL =	suite::sqlite_state::
-SUITE_SNAP =	suite::shell_snapshot::
-SUITE_MEM =	suite::memories::
-SUITE_MEM_P2 =	${SUITE_MEM}memories_startup_phase2_
-SUITE_MODEL =	suite::model_overrides::
-SUITE_CACHE =	suite::models_cache_ttl::
-SUITE_OTEL =	suite::otel::handle_container_exec_
-
-FULL_SESSION_TEST_SKIP =
+TARGETED_CORE_TEST_SKIP =
 .for _t in \
-	${SUITE_USCC}output_is_truncated_in_history \
-	${SUITE_USCC}does_not_replace_active_turn \
-	${SUITE_USCC}history_is_persisted_and_shared_with_model \
-	${SUITE_SQL}web_search_marks_thread_memory_mode_polluted_when_configured \
-	${SUITE_SNAP}shell_command_snapshot_still_intercepts_apply_patch \
-	${SUITE_SQL}user_messages_persist_in_state_db \
-	${SUITE_SQL}tool_call_logs_include_thread_id \
-	${SUITE_USC}user_shell_cmd_can_be_interrupted \
-	${SUITE_MEM_P2}tracks_added_and_removed_inputs_across_runs \
-	${SUITE_MODEL}override_turn_context_does_not_persist_when_config_exists \
-	${SUITE_CACHE}renews_cache_ttl_on_matching_models_etag \
-	${SUITE_CACHE}uses_cache_when_version_matches \
-	${SUITE_CACHE}refreshes_when_cache_version_missing \
-	${SUITE_SNAP}shell_command_snapshot_preserves_shell_environment_policy_set \
-	${SUITE_SNAP}shell_snapshot_deleted_after_shutdown_with_skills \
-	${SUITE_SQL}backfill_scans_existing_rollouts \
-	${SUITE_SQL}new_thread_is_recorded_in_state_db \
-	${SUITE_USC}user_shell_cmd_ls_and_cat_in_temp_dir \
-	${SUITE_OTEL}autoapprove_from_config_records_tool_decision \
-	${SUITE_OTEL}user_approved_for_session_records_tool_decision \
-	${SUITE_OTEL}user_approved_records_tool_decision \
-	${SUITE_OTEL}user_denies_records_tool_decision
-FULL_SESSION_TEST_SKIP +=	--skip ${_t}
+	exec::tests::kill_child_process_group_kills_grandchildren_on_timeout \
+	exec::tests::process_exec_tool_call_respects_cancellation_token \
+	shell_snapshot::tests::bash_snapshot_filters_invalid_exports \
+	shell_snapshot::tests::bash_snapshot_preserves_multiline_exports \
+	shell_snapshot::tests::snapshot_shell_does_not_inherit_stdin \
+	shell_snapshot::tests::try_new_creates_and_deletes_snapshot_file \
+	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
+	${RUNTIME_WRAP_TEST}applies_explicit_path_override \
+	${RUNTIME_WRAP_TEST}does_not_embed_override_values_in_argv \
+	${RUNTIME_WRAP_TEST}keeps_snapshot_path_without_override \
+	${RUNTIME_WRAP_TEST}preserves_unset_override_variables \
+	${RUNTIME_WRAP_TEST}restores_explicit_override_precedence \
+	tools::spec::tests::test_build_specs_artifact_tool_enabled
+TARGETED_CORE_TEST_SKIP +=	--skip ${_t}
 .endfor
 
 CODEX_BINS =	codex codex-mcp-server codex-stdio-to-uds codex-file-search
@@ -183,17 +167,24 @@ do-install:
 		${PREFIX}/bin/${_b}
 .endfor
 
-# codex-core integration tests can exceed the default soft file-descriptor limit
-# on OpenBSD due long-lived watchers across many test cases.
+# Keep the blanket workspace pass on targets that do not need aggregate
+# integration binaries. `codex-core` and `codex-exec` are exercised below with
+# explicit lib/bin and standalone integration targets so the port can skip
+# unsupported OpenBSD-only aggregates without patching test sources.
 do-test:
 	@ulimit -n 1024 && ${MODCARGO_TEST_TARGET}
 	@ulimit -n 1024 && \
 		cd ${WRKSRC} && \
 		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \
-		${FULL_SESSION_TEST_ENV} \
 		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
-		--release ${FULL_SESSION_TEST_ARGS} -p codex-core --test all \
-		-- ${FULL_SESSION_TEST_SKIP}
+		--release ${TARGETED_TEST_ARGS} -p codex-core \
+		--lib --bins --test responses_headers -- ${TARGETED_CORE_TEST_SKIP}
+	@ulimit -n 1024 && \
+		cd ${WRKSRC} && \
+		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \
+		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
+		--release ${TARGETED_TEST_ARGS} -p codex-exec \
+		--lib --bins --test event_processor_with_json_output
 
 pre-configure:
 	sed -i \
