@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.114.0
+V =		0.116.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -69,7 +69,10 @@ MODCARGO_TEST_ARGS +=	--workspace --exclude codex-core --exclude codex-exec
 # Excluded tests are narrow and OpenBSD-specific. The skip list below covers
 # runtime/package install checks that panic on openbsd-x86_64 artifact
 # detection, a few remaining shell/exec OpenBSD portability gaps, temporary
-# codex-tui regressions, and one intermittent codex-utils-pty failure.
+# codex-tui regressions, one codex-utils-pty preserved-FD PTY exit mismatch,
+# one codex-connectors shared-cache test that races against its sibling under
+# the workspace runner, and a config reload test that resolves host analytics
+# config instead of its temp codex_home.
 #
 # Timeout cleanup tests currently return EPERM from killpg(2) on OpenBSD.
 #
@@ -106,11 +109,13 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${CORE_TEST}pipe_process_detaches_from_parent_session \
 	ensure_installed_downloads_and_extracts_zip_runtime \
 	ensure_installed_downloads_and_extracts_zip_package \
+	${CORE_TEST}ensure_installed_downloads_and_extracts_tar_gz_runtime \
 	resolve_preinstalled_runtime_reads_pinned_cache_path \
 	${CORE_TEST}artifacts_client_execute_build_writes_wrapped_script_and_env \
 	${CORE_TEST}artifacts_client_execute_render_passes_expected_args \
 	${CORE_TEST}load_cached_runtime_reads_installed_runtime \
 	${CORE_TEST}load_cached_runtime_rejects_parent_relative_paths \
+	${CORE_TEST}load_cached_runtime_requires_package_export \
 	${CORE_TEST}load_cached_runtime_requires_build_entrypoint \
 	${CORE_TEST}load_cached_runtime_uses_custom_cache_root \
 	${CORE_TEST}resolve_cached_uses_custom_cache_root \
@@ -125,9 +130,16 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	tests::typed_request_reports_json_rpc_errors \
 	tests::caller_provided_session_source_is_applied \
 	tests::tiny_channel_capacity_still_supports_request_roundtrip \
-	${INPROC_TEST}initializes_and_handles_typed_v2_request \
-	${INPROC_TEST}uses_requested_session_source_for_thread_start \
-	${INPROC_TEST}clamps_zero_channel_capacity \
+	config_api::tests::batch_write_reloads_user_config_when_requested \
+	tests::next_event_surfaces_lagged_markers \
+	tests::accessors_expose_retained_shared_managers \
+	tests::list_all_connectors_uses_shared_cache \
+		tests::shared_thread_manager_tracks_threads_started_via_app_server \
+		tests::shutdown_completes_promptly_with_retained_shared_managers \
+		tests::pty_spawn_can_preserve_inherited_fds \
+		${INPROC_TEST}initializes_and_handles_typed_v2_request \
+		${INPROC_TEST}uses_requested_session_source_for_thread_start \
+		${INPROC_TEST}clamps_zero_channel_capacity \
 	unix::escalate_server::tests::exec_closes_parent_socket_after_shell_spawn \
 	exec::tests::kill_child_process_group_kills_grandchildren_on_timeout \
 	exec::tests::process_exec_tool_call_respects_cancellation_token
@@ -147,6 +159,7 @@ TARGETED_CORE_TEST_SKIP =
 	shell_snapshot::tests::bash_snapshot_preserves_multiline_exports \
 	shell_snapshot::tests::snapshot_shell_does_not_inherit_stdin \
 	shell_snapshot::tests::try_new_creates_and_deletes_snapshot_file \
+	shell_snapshot::tests::try_new_uses_distinct_generation_paths \
 	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
 	${RUNTIME_WRAP_TEST}applies_explicit_path_override \
 	${RUNTIME_WRAP_TEST}does_not_embed_override_values_in_argv \

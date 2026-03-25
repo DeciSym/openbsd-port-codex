@@ -21,12 +21,12 @@ make package
 
 Output package path:
 
-`${REPO_ROOT}/.packages/amd64/all/codex-0.106.0.tgz`
+`${REPO_ROOT}/.packages/amd64/all/codex-0.116.0.tgz`
 
 ## Install Package
 
 ```sh
-doas pkg_add -D unsigned "${REPO_ROOT}/.packages/amd64/all/codex-0.106.0.tgz"
+doas pkg_add -D unsigned "${REPO_ROOT}/.packages/amd64/all/codex-0.116.0.tgz"
 ```
 
 ## Validation

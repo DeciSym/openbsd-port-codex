@@ -1,5 +1,5 @@
-bin/codex
-bin/codex-mcp-server
-bin/codex-stdio-to-uds
-bin/codex-file-search
+@bin bin/codex
+@bin bin/codex-file-search
+@bin bin/codex-mcp-server
+@bin bin/codex-stdio-to-uds
 share/doc/pkg-readmes/${PKGSTEM}
