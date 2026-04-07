@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.116.0
+V =		0.118.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 

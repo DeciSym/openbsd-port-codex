@@ -1,0 +1,20 @@
+Remove the proof-of-concept V8 workspace member on OpenBSD.
+
+Index: codex-rs/Cargo.toml
+--- codex-rs/Cargo.toml.orig
++++ codex-rs/Cargo.toml
+@@ -52,4 +52,3 @@
+     "tui",
+     "tools",
+-    "v8-poc",
+     "utils/absolute-path",
+@@ -151,4 +150,3 @@
+ codex-tools = { path = "tools" }
+ codex-tui = { path = "tui" }
+-codex-v8-poc = { path = "v8-poc" }
+ codex-utils-absolute-path = { path = "utils/absolute-path" }
+@@ -388,4 +386,3 @@
+     "codex-utils-readiness",
+     "codex-utils-template",
+-    "codex-v8-poc",
+ ]
