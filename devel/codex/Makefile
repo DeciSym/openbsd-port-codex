@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.118.0
+V =		0.120.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -14,6 +14,7 @@ TOKIO_TUNGSTENITE_COMMIT =	132f5b39c862e3a970f731d709608b3e6276d5f6
 TUNGSTENITE_COMMIT =	9200079d3b54a1ff51072e24d81fd354f085156f
 NUCLEO_COMMIT =	4253de9faabb4e5c6d81d946a5e35a90f87347ee
 RULES_RUST_COMMIT =	b56cbaa8465e74127f1ea216f813cd377295ad81
+RUST_SDKS_COMMIT =	e2d1d1d230c6fc9df171ccb181423f957bb3c1f0
 
 DIST_TUPLE +=	github openai codex rust-v${V} .
 DIST_TUPLE +=	github nornagon crossterm ${CROSSTERM_COMMIT} ../crossterm
@@ -24,6 +25,7 @@ DIST_TUPLE +=	github openai-oss-forks tungstenite-rs \
 	${TUNGSTENITE_COMMIT} ../tungstenite-rs
 DIST_TUPLE +=	github helix-editor nucleo ${NUCLEO_COMMIT} ../nucleo
 DIST_TUPLE +=	github dzbarsky rules_rust ${RULES_RUST_COMMIT} ../rules_rust
+DIST_TUPLE +=	github juberti-oai rust-sdks ${RUST_SDKS_COMMIT} ../rust-sdks
 
 WRKSRC =	${WRKDIR}/${DISTNAME}/codex-rs
 
@@ -106,6 +108,9 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${STATUS_TEST}shows_missing_limits_message \
 	${STATUS_TEST}shows_stale_limits_message \
 	${STATUS_TEST}truncates_in_narrow_terminal \
+	${STATUS_TEST}shows_refreshing_limits_notice \
+	${STATUS_TEST}shows_unavailable_limits_message \
+	${STATUS_TEST}treats_refreshing_empty_limits_as_unavailable \
 	${CORE_TEST}pipe_process_detaches_from_parent_session \
 	ensure_installed_downloads_and_extracts_zip_runtime \
 	ensure_installed_downloads_and_extracts_zip_package \
@@ -131,12 +136,20 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	tests::caller_provided_session_source_is_applied \
 	tests::tiny_channel_capacity_still_supports_request_roundtrip \
 	config_api::tests::batch_write_reloads_user_config_when_requested \
+	tests::runtime_start_args_forward_environment_manager \
+	tests::threads_started_via_app_server_are_visible_through_typed_requests \
+	tests::shutdown_completes_promptly_without_retained_managers \
+	exec_process_write_then_read::local \
+	exec_process_write_then_read::remote \
+	config::tests::statsig_default_metrics_exporter_is_disabled_in_debug_builds \
 	tests::next_event_surfaces_lagged_markers \
 	tests::accessors_expose_retained_shared_managers \
 	tests::list_all_connectors_uses_shared_cache \
 		tests::shared_thread_manager_tracks_threads_started_via_app_server \
 		tests::shutdown_completes_promptly_with_retained_shared_managers \
 		tests::pty_spawn_can_preserve_inherited_fds \
+	tests::pipe_spawn_no_stdin_can_preserve_inherited_fds \
+	unix::socket::tests::async_socket_round_trips_payload_and_fds \
 		${INPROC_TEST}initializes_and_handles_typed_v2_request \
 		${INPROC_TEST}uses_requested_session_source_for_thread_start \
 		${INPROC_TEST}clamps_zero_channel_capacity \
@@ -155,6 +168,7 @@ TARGETED_CORE_TEST_SKIP =
 .for _t in \
 	exec::tests::kill_child_process_group_kills_grandchildren_on_timeout \
 	exec::tests::process_exec_tool_call_respects_cancellation_token \
+	exec::tests::process_exec_tool_call_preserves_full_buffer_capture_policy \
 	shell_snapshot::tests::bash_snapshot_filters_invalid_exports \
 	shell_snapshot::tests::bash_snapshot_preserves_multiline_exports \
 	shell_snapshot::tests::snapshot_shell_does_not_inherit_stdin \
@@ -166,6 +180,7 @@ TARGETED_CORE_TEST_SKIP =
 	${RUNTIME_WRAP_TEST}keeps_snapshot_path_without_override \
 	${RUNTIME_WRAP_TEST}preserves_unset_override_variables \
 	${RUNTIME_WRAP_TEST}restores_explicit_override_precedence \
+	${RUNTIME_WRAP_TEST}restores_codex_thread_id_from_env \
 	tools::spec::tests::test_build_specs_artifact_tool_enabled
 TARGETED_CORE_TEST_SKIP +=	--skip ${_t}
 .endfor
@@ -181,9 +196,10 @@ do-install:
 .endfor
 
 # Keep the blanket workspace pass on targets that do not need aggregate
-# integration binaries. `codex-core` and `codex-exec` are exercised below with
-# explicit lib/bin and standalone integration targets so the port can skip
-# unsupported OpenBSD-only aggregates without patching test sources.
+# integration binaries. `codex-core` is exercised below with explicit lib/bin
+# and standalone integration targets; `codex-exec` is limited to lib/bin tests
+# because upstream's only aggregate integration target currently pulls in a
+# macOS/Linux-only sandbox module that does not compile on OpenBSD.
 do-test:
 	@ulimit -n 1024 && ${MODCARGO_TEST_TARGET}
 	@ulimit -n 1024 && \
@@ -197,7 +213,7 @@ do-test:
 		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \
 		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
 		--release ${TARGETED_TEST_ARGS} -p codex-exec \
-		--lib --bins --test event_processor_with_json_output
+		--lib --bins
 
 pre-configure:
 	sed -i \

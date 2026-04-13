@@ -1,0 +1,14 @@
+Avoid fetching the rust-sdks workspace from GitHub during offline builds.
+
+Index: codex-rs/realtime-webrtc/Cargo.toml
+--- codex-rs/realtime-webrtc/Cargo.toml.orig
++++ codex-rs/realtime-webrtc/Cargo.toml
+@@ -13,7 +13,7 @@
+ tokio = { workspace = true, features = ["rt-multi-thread"] }
+ 
+ [target.'cfg(target_os = "macos")'.dependencies]
+-libwebrtc = { version = "0.3.26", git = "https://github.com/juberti-oai/rust-sdks.git", rev = "e2d1d1d230c6fc9df171ccb181423f957bb3c1f0" }
++libwebrtc = { version = "0.3.26", path = "../../../rust-sdks/libwebrtc" }
+ 
+ [lints]
+ workspace = true

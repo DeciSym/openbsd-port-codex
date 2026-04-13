@@ -34,6 +34,21 @@ deviate:
 6. Run `portcheck -p /path/to/ports/tree` after the build/package/test
    validation is complete.
 
+When running `portcheck` against a local ports clone that is outside the
+system `PORTSDIR_PATH`, export `PORTSDIR_PATH=/path/to/tree:/usr/ports:/usr/ports/mystuff`
+for the `portcheck` invocation as well. Running `portcheck -A` from the
+tree root can also false-positive on `crates.inc` because it expects the
+full relative path in `.include`; use the non-`-A` form from the port
+directory for `devel/codex`.
+
+When a `Cargo.toml` patch applies with fuzz after an upstream workspace
+reshuffle, inspect the result before trusting the patch phase. During
+the 0.120.0 update, `patch-Cargo_toml-v8poc` deleted
+`codex-shell-command` from `workspace.dependencies` instead of
+removing only `codex-v8-poc`, which caused Cargo workspace dependency
+inheritance to fail before compilation. Refresh those hunks to exact
+line ranges rather than relying on fuzzy matches.
+
 For flavored builds in this tree, use `env FLAVOR=... make ...`
 instead of `make FLAVOR=...`. The ports framework rejects the latter
 form here. Expect separate flavored work and package paths such as
@@ -56,12 +71,26 @@ same OpenBSD shell-snapshot portability gap as the other targeted
 `shell_snapshot` exclusions. Add a narrow `TARGETED_CORE_TEST_SKIP`
 entry instead of patching the test source.
 
+During the 0.120.0 update, two more `codex-core` targeted tests turned
+out to be host-tool portability checks rather than product regressions:
+`exec::tests::process_exec_tool_call_preserves_full_buffer_capture_policy`
+uses GNU `head -c`, which OpenBSD `head` does not implement, and
+`tools::runtimes::tests::maybe_wrap_shell_lc_with_snapshot_restores_codex_thread_id_from_env`
+hardcodes `/bin/bash` instead of the OpenBSD `bash` path. Treat both as
+`TARGETED_CORE_TEST_SKIP` exclusions.
+
 For `codex-utils-pty`, distinguish PTY inherited-FD failures from the
 pipe path. During the 0.116.0 update,
 `tests::pty_spawn_can_preserve_inherited_fds` exited `1` on OpenBSD
 while `pipe_spawn_no_stdin_can_preserve_inherited_fds` still passed.
 Treat that PTY-only mismatch as an OpenBSD test exclusion in the main
 workspace skip list.
+
+Re-check that assumption on later releases. During the 0.120.0 update,
+`tests::pipe_spawn_no_stdin_can_preserve_inherited_fds` also exited `1`
+on OpenBSD even though `/dev/fd/$fd` worked from the shell, so the
+preserved-FD pipe exit mismatch is now the same OpenBSD exclusion class
+as the PTY inherited-FD case.
 
 When a new test failure looks like a shared-state race, confirm it
 before extending the skip list. During the 0.116.0 `all_features`
@@ -73,6 +102,40 @@ already-built test binary under
 exact test name and when run with `--test-threads=1`. Use that pattern
 to distinguish flaky shared-state tests from real OpenBSD behavior
 breakage.
+
+If `codex-exec` upstream collapses standalone integration tests into a
+single aggregate `all` target, inspect whether that target still
+compiles on OpenBSD before wiring it into `do-test`. During the 0.120.0
+update, `exec/tests/all.rs` pulled in `tests/suite/sandbox.rs`, which
+only defines `spawn_command_under_sandbox()` and Linux/macOS
+`writable_roots` helpers behind `#[cfg(target_os = "linux"|"macos")]`.
+That aggregate test target does not compile on OpenBSD, so keep the
+targeted `codex-exec` pass to `--lib --bins` until upstream restores a
+portable standalone integration target.
+
+Measured timings for the 0.120.0 update on 2026-04-13:
+- final `make makesum`: 14.46s real
+- `make modcargo-gen-crates`: 54.03s real
+- final `env FLAVOR=all_features make checkpatch`: 55.60s real
+- `env FLAVOR=all_features make port-lib-depends-check`: 1302.97s real;
+  the flavored release build phase reported `Finished 'release'
+  profile [optimized] target(s) in 19m 44s`
+- `env FLAVOR=all_features make update-plist`: 2.21s real
+- `env FLAVOR=all_features make package`: 16.35s real
+- first `env FLAVOR=all_features make test`: 1258.19s real; failed in
+  `codex-app-server-client` after the workspace pass
+- targeted-core rerun after the first skip update: 999.40s real;
+  `codex-core` rebuilt in 14m 13s before failing on GNU `head -c` and
+  `/bin/bash` assumptions
+- hot rerun after those core skips: 50.79s real; failed at
+  `tests::pipe_spawn_no_stdin_can_preserve_inherited_fds`
+- hot rerun after the `codex-utils-pty` skip: 146.39s real; failed
+  because upstream renamed the `codex-exec` integration target
+- rerun with `codex-exec --test all`: 654.25s real; failed because the
+  aggregate target pulled in `sandbox.rs`, which does not compile on
+  OpenBSD
+- final `env FLAVOR=all_features make test`: 147.24s real; passed after
+  limiting the targeted `codex-exec` pass to `--lib --bins`
 
 Measured timings for the 0.116.0 update on 2026-03-25:
 - `make makesum`: 8.64s real
