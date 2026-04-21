@@ -1,0 +1,13 @@
+Do not start the code-mode worker on OpenBSD.
+
+Index: codex-rs/core/src/session/turn.rs
+--- codex-rs/core/src/session/turn.rs.orig
++++ codex-rs/core/src/session/turn.rs
+@@ -1030,6 +1030,7 @@
+         Arc::clone(&turn_context),
+         Arc::clone(&turn_diff_tracker),
+     );
++    #[cfg(not(target_os = "openbsd"))]
+     let _code_mode_worker = sess
+         .services
+         .code_mode_service

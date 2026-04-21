@@ -1,0 +1,13 @@
+Remove the session-scoped code-mode service on OpenBSD.
+
+Index: codex-rs/core/src/session/session.rs
+--- codex-rs/core/src/session/session.rs.orig
++++ codex-rs/core/src/session/session.rs
+@@ -675,6 +675,7 @@
+                 config.features.enabled(Feature::RuntimeMetrics),
+                 Self::build_model_client_beta_features_header(config.as_ref()),
+             ),
++            #[cfg(not(target_os = "openbsd"))]
+             code_mode_service: crate::tools::code_mode::CodeModeService::new(
+                 config.js_repl_node_path.clone(),
+             ),

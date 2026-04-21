@@ -3,7 +3,7 @@ Provide OpenBSD no-op code-mode helpers in codex-tools.
 Index: codex-rs/tools/src/code_mode.rs
 --- codex-rs/tools/src/code_mode.rs.orig
 +++ codex-rs/tools/src/code_mode.rs
-@@ -5,12 +5,47 @@
+@@ -5,12 +5,48 @@
  use crate::ResponsesApiTool;
  use crate::ToolName;
  use crate::ToolSpec;
@@ -12,6 +12,7 @@ Index: codex-rs/tools/src/code_mode.rs
 -use codex_code_mode::ToolDefinition as CodeModeToolDefinition;
  use std::collections::BTreeMap;
  
+ /// Augment tool descriptions with code-mode-specific exec samples.
 +#[cfg(not(target_os = "openbsd"))]
 +pub use codex_code_mode::PUBLIC_TOOL_NAME;
 +#[cfg(not(target_os = "openbsd"))]
@@ -40,7 +41,7 @@ Index: codex-rs/tools/src/code_mode.rs
 +#[cfg(target_os = "openbsd")]
 +pub const WAIT_TOOL_NAME: &str = "wait";
 +
- /// Augment tool descriptions with code-mode-specific exec samples.
++/// Augment tool descriptions with code-mode-specific exec samples.
 +#[cfg(target_os = "openbsd")]
  pub fn augment_tool_spec_for_code_mode(spec: ToolSpec) -> ToolSpec {
 +    spec
@@ -52,7 +53,7 @@ Index: codex-rs/tools/src/code_mode.rs
      match spec {
          ToolSpec::Function(mut tool) => {
              let Some(description) =
-@@ -57,13 +92,29 @@
+@@ -57,13 +93,29 @@
  
  /// Convert a supported nested tool spec into the code-mode runtime shape,
  /// including the code-mode-specific description sample.
@@ -82,7 +83,7 @@ Index: codex-rs/tools/src/code_mode.rs
      specs: impl IntoIterator<Item = &'a ToolSpec>,
  ) -> Vec<CodeModeToolDefinition> {
      let mut tool_definitions = specs
-@@ -77,7 +128,15 @@
+@@ -77,7 +129,15 @@
      tool_definitions
  }
  
@@ -98,7 +99,7 @@ Index: codex-rs/tools/src/code_mode.rs
      specs: impl IntoIterator<Item = &'a ToolSpec>,
  ) -> Vec<CodeModeToolDefinition> {
      let mut tool_definitions = specs
-@@ -90,7 +149,20 @@
+@@ -90,7 +150,20 @@
      tool_definitions
  }
  
@@ -119,7 +120,7 @@ Index: codex-rs/tools/src/code_mode.rs
      let properties = BTreeMap::from([
          (
              "cell_id".to_string(),
-@@ -135,9 +207,27 @@
+@@ -135,9 +208,28 @@
      })
  }
  
@@ -127,7 +128,8 @@ Index: codex-rs/tools/src/code_mode.rs
  pub fn create_code_mode_tool(
 +    _enabled_tools: &[CodeModeToolDefinition],
 +    _namespace_descriptions: &BTreeMap<String, ToolNamespaceDescription>,
-+    _code_mode_only_enabled: bool,
++    _code_mode_only: bool,
++    _deferred_tools_available: bool,
 +) -> ToolSpec {
 +    ToolSpec::Freeform(FreeformTool {
 +        name: PUBLIC_TOOL_NAME.to_string(),
@@ -145,10 +147,10 @@ Index: codex-rs/tools/src/code_mode.rs
      enabled_tools: &[CodeModeToolDefinition],
 -    namespace_descriptions: &BTreeMap<String, codex_code_mode::ToolNamespaceDescription>,
 +    namespace_descriptions: &BTreeMap<String, ToolNamespaceDescription>,
-     code_mode_only_enabled: bool,
+     code_mode_only: bool,
+     deferred_tools_available: bool,
  ) -> ToolSpec {
-     const CODE_MODE_FREEFORM_GRAMMAR: &str = r#"
-@@ -165,16 +255,19 @@
+@@ -167,16 +259,19 @@
      })
  }
  

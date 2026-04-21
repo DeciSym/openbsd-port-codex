@@ -75,6 +75,7 @@ SHA256 (cargo/bit-set-0.5.3.tar.gz) = BwDdq1BvM7IKA7E5luzNMJpI5f930NlZJqoCEPtOlf
 SHA256 (cargo/bit-vec-0.6.3.tar.gz) = NJ+bahee1gcwVSbKSJs0rQpBrtX3mA+pDrAxYLaVmPs=
 SHA256 (cargo/bitflags-1.3.2.tar.gz) = vvONRRY8Lx3eCUp9/TPM9ZXJKQXI+PT9wY0G+xA3cYo=
 SHA256 (cargo/bitflags-2.10.0.tar.gz) = gS4StShcxRWpxypcHTttRqGdrFrP71JllowWYQbjHdM=
+SHA256 (cargo/blake2-0.10.6.tar.gz) = RlAq1FjJpStp1NTTJ3XHiLehuF6LydSC2SJQ/A4/jv4=
 SHA256 (cargo/block-buffer-0.10.4.tar.gz) = MHjHYpti0/BDlRf6OUmWrKzFy8kcWiDYxljner1QOnE=
 SHA256 (cargo/block-padding-0.3.3.tar.gz) = qIlP67/591gDSluOEth5GPVt/GSo4f51fWXikEFTjZM=
 SHA256 (cargo/block2-0.6.2.tar.gz) = zeudhwUWABRC42TFIg01dNLajcdlVUtKYXIw0z+ljvU=
@@ -158,6 +159,8 @@ SHA256 (cargo/crossbeam-utils-0.8.21.tar.gz) = 0KXEAN8oNLgKTDMns6rTpMTNTeBikGOWK
 SHA256 (cargo/crossterm_winapi-0.9.1.tar.gz) = rN18YqNmXH9oMKUWNdmsmyPtOFeX9wqDu4uv6cVyqys=
 SHA256 (cargo/crunchy-0.2.4.tar.gz) = Rg++6cLC8zkz1yBjCmoLrDO6cFPbU0T6yFjUuJUtd9U=
 SHA256 (cargo/crypto-common-0.1.7.tar.gz) = eMgpIFXRwd8Mzl0YA5PcjM4KvsCnECrbbHse72AW1go=
+SHA256 (cargo/crypto_box-0.9.1.tar.gz) = FhgrTzmoLsimhRFVzEwM2jBlux2zNlFyainhlR3g8Ak=
+SHA256 (cargo/crypto_secretbox-0.1.1.tar.gz) = udbPh633Gd30OoBeksaHClMa7do1/2QEQsuvhnThQeE=
 SHA256 (cargo/csv-1.4.0.tar.gz) = Us2daM9+/G3fqu5C5yiNOpnWE9S1D3bOmCeuDG4U+Tg=
 SHA256 (cargo/csv-core-0.1.13.tar.gz) = cEo8JplqgEcRiSZYFNvCwldZi5a4p/6uLTGs5ka7l4I=
 SHA256 (cargo/ctor-0.1.26.tar.gz) = bSMBaIOS6wcbC/Gje+BcRp08xNu9ld9nL+KKsCHmoJY=
@@ -572,9 +575,11 @@ SHA256 (cargo/proptest-1.9.0.tar.gz) = vuaJRDor0KFqsDSLUu5D47LRsfkxyKpcn43kyG++j
 SHA256 (cargo/prost-0.12.6.tar.gz) = 3rFDXBiLdhMNpV8XpGbSUv97FBiyrT4DfRJ7lONBHyk=
 SHA256 (cargo/prost-0.14.3.tar.gz) = 0upwUkovgtUYvOQTF9D650FRUFZRr0X68f+9b9M/BWg=
 SHA256 (cargo/prost-build-0.12.6.tar.gz) = IlBaXJTajjt8KZY5TRyTMjbE10PoGkELzKTmmJ/AZqQ=
+SHA256 (cargo/prost-build-0.14.3.tar.gz) = ND071wVu2oObAyBOaN7/fRsTq6evKy/RaJBpcnQmLuc=
 SHA256 (cargo/prost-derive-0.12.6.tar.gz) = gb3c2yCr+VAWEJkrZ1mkyIiu99GnJH73XiQEJ1rCSvE=
 SHA256 (cargo/prost-derive-0.14.3.tar.gz) = J8YCOWITL0sw60wXLJHOktkz2jNMWcI83e6CNY3a+ws=
 SHA256 (cargo/prost-types-0.12.6.tar.gz) = kJHJCwoyYI6YT/L6QJEnPL3XVdVJNcUdUgiH9KHb1bA=
+SHA256 (cargo/prost-types-0.14.3.tar.gz) = iZHEy9uLxbEfCwdP/ihsMOUj3pD+5bqBMvE5nyPLPdc=
 SHA256 (cargo/psl-2.1.184.tar.gz) = gdxqkGafSBtByuMAXGjvo2vvJ1uVqpEjp69/HGjG5bI=
 SHA256 (cargo/psl-types-2.0.11.tar.gz) = M8spT+hqdMvPUNREWzfadiApVJ6+6jQUIcfHA3D4bKw=
 SHA256 (cargo/pulldown-cmark-0.10.3.tar.gz) = dpeb6mbnh151CcTsUwARKzFq+H+nolLKkcRIsy3+OZM=
@@ -813,7 +818,9 @@ SHA256 (cargo/toml_edit-0.24.0+spec-1.1.0.tar.gz) = jHQLGFkgFwptkZESLK/vcBC9YnCj
 SHA256 (cargo/toml_parser-1.0.6+spec-1.1.0.tar.gz) = oxmLSwqOEfCd0D4TPAKAUE0IASaemvpGNi/94cvuv0Q=
 SHA256 (cargo/toml_writer-1.0.6+spec-1.1.0.tar.gz) = qxbxSu0h7ov9jsIlE/cofNSpGqkuRO3+LBfd0ATpJgc=
 SHA256 (cargo/tonic-0.14.3.tar.gz) = oobjP4L4oe4t9j9Po1wL7PSoWgywMJGhX9e/C0AtyUo=
+SHA256 (cargo/tonic-build-0.14.3.tar.gz) = J6rICe32C3QeLX22NnIU0HiFa4pb/wCH6U/zMPuXtvw=
 SHA256 (cargo/tonic-prost-0.14.3.tar.gz) = 1sVaLWoUF0Vj3jRAnJ+S/5gdAG9W2pxuzUDZ1KMVALA=
+SHA256 (cargo/tonic-prost-build-0.14.3.tar.gz) = pFVnhmE3kc/vTtE0qmcLYahc/Kz3FUPvM+jYAauumI8=
 SHA256 (cargo/tower-0.5.3.tar.gz) = 6+XvY1EVlfE0Ti1c+mNtlzKSrcDuwfCtRfrp8IUasdQ=
 SHA256 (cargo/tower-http-0.6.8.tar.gz) = 1OZVnVPMJo5QMc2EKdBUFbxMtK78SqXWzDX79bkkofg=
 SHA256 (cargo/tower-layer-0.3.3.tar.gz) = EhwqbNpGmAuw/NFkf/r2zT/HmgE94oh4KDb235xIeA4=
@@ -1025,7 +1032,7 @@ SHA256 (helix-editor-nucleo-4253de9faabb4e5c6d81d946a5e35a90f87347ee.tar.gz) = 0
 SHA256 (juberti-oai-rust-sdks-e2d1d1d230c6fc9df171ccb181423f957bb3c1f0.tar.gz) = L7IlZYsCuOkY6rBvaupMHBumWuUZHaeA4EpfhM3Umqc=
 SHA256 (nornagon-crossterm-87db8bfa6dc99427fd3b071681b07fc31c6ce995.tar.gz) = tJrDQua12cAV9ThGkMKmHW8xwMPDSq8cwivklWEiKUw=
 SHA256 (nornagon-ratatui-9b2ad1298408c45918ee9f8241a6f95498cdbed2.tar.gz) = slLAIUXlq7/BcEZniLvutTozZfy8ilYh8o95ut0fanA=
-SHA256 (openai-codex-rust-v0.121.0.tar.gz) = VmwWhnmX3mFnKcKsufi2LvFlXDjh4w87oYoPwmeF03I=
+SHA256 (openai-codex-rust-v0.122.0.tar.gz) = sBKjHOlgdt0qcaO5YGyKWYlSFA2JansS7AexRx7RMNo=
 SHA256 (openai-oss-forks-tokio-tungstenite-132f5b39c862e3a970f731d709608b3e6276d5f6.tar.gz) = 1TPWV+/M8npsEchhFJmLGnd9UkNpbRnaLhgHKb2nxH0=
 SHA256 (openai-oss-forks-tungstenite-rs-9200079d3b54a1ff51072e24d81fd354f085156f.tar.gz) = pm7OW230fR9e8D0JibP2kxyXLB1okFE/rzrH6O8B2ho=
 SIZE (cargo/Inflector-0.11.4.tar.gz) = 17438
@@ -1105,6 +1112,7 @@ SIZE (cargo/bit-set-0.5.3.tar.gz) = 14470
 SIZE (cargo/bit-vec-0.6.3.tar.gz) = 19927
 SIZE (cargo/bitflags-1.3.2.tar.gz) = 23021
 SIZE (cargo/bitflags-2.10.0.tar.gz) = 48427
+SIZE (cargo/blake2-0.10.6.tar.gz) = 47234
 SIZE (cargo/block-buffer-0.10.4.tar.gz) = 10538
 SIZE (cargo/block-padding-0.3.3.tar.gz) = 8504
 SIZE (cargo/block2-0.6.2.tar.gz) = 34505
@@ -1188,6 +1196,8 @@ SIZE (cargo/crossbeam-utils-0.8.21.tar.gz) = 42691
 SIZE (cargo/crossterm_winapi-0.9.1.tar.gz) = 16027
 SIZE (cargo/crunchy-0.2.4.tar.gz) = 3887
 SIZE (cargo/crypto-common-0.1.7.tar.gz) = 9619
+SIZE (cargo/crypto_box-0.9.1.tar.gz) = 16702
+SIZE (cargo/crypto_secretbox-0.1.1.tar.gz) = 11377
 SIZE (cargo/csv-1.4.0.tar.gz) = 888642
 SIZE (cargo/csv-core-0.1.13.tar.gz) = 26119
 SIZE (cargo/ctor-0.1.26.tar.gz) = 10803
@@ -1602,9 +1612,11 @@ SIZE (cargo/proptest-1.9.0.tar.gz) = 205346
 SIZE (cargo/prost-0.12.6.tar.gz) = 21552
 SIZE (cargo/prost-0.14.3.tar.gz) = 33174
 SIZE (cargo/prost-build-0.12.6.tar.gz) = 41294
+SIZE (cargo/prost-build-0.14.3.tar.gz) = 48990
 SIZE (cargo/prost-derive-0.12.6.tar.gz) = 19556
 SIZE (cargo/prost-derive-0.14.3.tar.gz) = 21365
 SIZE (cargo/prost-types-0.12.6.tar.gz) = 43568
+SIZE (cargo/prost-types-0.14.3.tar.gz) = 49368
 SIZE (cargo/psl-2.1.184.tar.gz) = 201372
 SIZE (cargo/psl-types-2.0.11.tar.gz) = 7959
 SIZE (cargo/pulldown-cmark-0.10.3.tar.gz) = 141746
@@ -1843,7 +1855,9 @@ SIZE (cargo/toml_edit-0.24.0+spec-1.1.0.tar.gz) = 66403
 SIZE (cargo/toml_parser-1.0.6+spec-1.1.0.tar.gz) = 34897
 SIZE (cargo/toml_writer-1.0.6+spec-1.1.0.tar.gz) = 17187
 SIZE (cargo/tonic-0.14.3.tar.gz) = 108185
+SIZE (cargo/tonic-build-0.14.3.tar.gz) = 14957
 SIZE (cargo/tonic-prost-0.14.3.tar.gz) = 6693
+SIZE (cargo/tonic-prost-build-0.14.3.tar.gz) = 13157
 SIZE (cargo/tower-0.5.3.tar.gz) = 110488
 SIZE (cargo/tower-http-0.6.8.tar.gz) = 135827
 SIZE (cargo/tower-layer-0.3.3.tar.gz) = 6180
@@ -2055,6 +2069,6 @@ SIZE (helix-editor-nucleo-4253de9faabb4e5c6d81d946a5e35a90f87347ee.tar.gz) = 867
 SIZE (juberti-oai-rust-sdks-e2d1d1d230c6fc9df171ccb181423f957bb3c1f0.tar.gz) = 9672900
 SIZE (nornagon-crossterm-87db8bfa6dc99427fd3b071681b07fc31c6ce995.tar.gz) = 129254
 SIZE (nornagon-ratatui-9b2ad1298408c45918ee9f8241a6f95498cdbed2.tar.gz) = 566574
-SIZE (openai-codex-rust-v0.121.0.tar.gz) = 6377437
+SIZE (openai-codex-rust-v0.122.0.tar.gz) = 6633600
 SIZE (openai-oss-forks-tokio-tungstenite-132f5b39c862e3a970f731d709608b3e6276d5f6.tar.gz) = 31620
 SIZE (openai-oss-forks-tungstenite-rs-9200079d3b54a1ff51072e24d81fd354f085156f.tar.gz) = 293929

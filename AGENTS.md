@@ -143,6 +143,45 @@ resolves that mode to `Auto` instead of `File`. Treat those fixture
 expectation mismatches as `TARGETED_CORE_TEST_SKIP` exclusions for the
 packaged build rather than patching the product code.
 
+During the 0.122.0 update, `codex-tui`
+`status::tests::status_snapshot_uses_default_reasoning_when_config_empty`
+failed because the snapshot expects the source-build placeholder
+`v0.0.0`, while the packaged OpenBSD build correctly renders the real
+`env!("CARGO_PKG_VERSION")` (`v0.122.0`). Treat that as the same
+packaged-build snapshot-mismatch class as the 0.121.0 config fixture
+failures and add a narrow main-workspace `--skip` entry rather than
+patching the snapshot or product code.
+
+When `make modcargo-gen-crates` introduces a second version of a crate
+that is already listed in `crates.inc`, verify the duplicate before
+deduplicating by hand. During the 0.122.0 update, upstream needed both
+`prost-build`/`prost-types` `0.12.6` and `0.14.3`: the `pbjson-build`
+stack still depends on the `0.12` line, while `tonic-prost-build`
+pulls the `0.14` line.
+
+Measured timings for the 0.122.0 update on 2026-04-21:
+- `make makesum`: 8.66s real on the initial release bump; 8.87s real
+  after fixing `crates.inc`
+- `make modcargo-gen-crates`: 51.85s real
+- final `env FLAVOR=all_features make checkpatch`: 0.60s real
+- first `env FLAVOR=all_features make port-lib-depends-check`: 53.49s
+  real; failed because `crates.inc` was missing seven new registry
+  crates from upstream `Cargo.lock`
+- final `env FLAVOR=all_features make port-lib-depends-check`:
+  1171.99s real; the flavored release build phase reported `Finished
+  'release' profile [optimized] target(s) in 17m 41s`
+- `env FLAVOR=all_features make update-plist`: 1.60s real
+- `env FLAVOR=all_features make package`: 12.62s real
+- first `env FLAVOR=all_features make test`: 1351.33s real; failed at
+  `codex-tui` `status_snapshot_uses_default_reasoning_when_config_empty`
+- final `env FLAVOR=all_features make test`: 1911.26s real; the
+  targeted `codex-core` release rebuild reported `Finished 'release'
+  profile [optimized] target(s) in 15m 18s`, and the targeted
+  `codex-exec` release rebuild reported `Finished 'release' profile
+  [optimized] target(s) in 8m 42s`
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 7.17s real
+
 Measured timings for the 0.121.0 update on 2026-04-16:
 - final `env FLAVOR=all_features make checkpatch`: 0.58s real
 - final `env FLAVOR=all_features make test`: 972.79s real

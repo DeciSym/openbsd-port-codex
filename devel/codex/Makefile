@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.121.0
+V =		0.122.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -100,6 +100,7 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 .for _t in \
 	${PROMPT_TEST}update_prompt_snapshot \
 	${HISTORY_TEST}session_info_availability_nux_tooltip_snapshot \
+	${STATUS_TEST}uses_default_reasoning_when_config_empty \
 	${STATUS_TEST}cached_limits_hide_credits_without_flag \
 	${STATUS_TEST}includes_credits_and_limits \
 	${STATUS_TEST}includes_forked_from \

@@ -1,9 +1,9 @@
 Omit code-mode service test setup on OpenBSD.
 
-Index: codex-rs/core/src/codex_tests.rs
---- codex-rs/core/src/codex_tests.rs.orig
-+++ codex-rs/core/src/codex_tests.rs
-@@ -2933,6 +2933,7 @@
+Index: codex-rs/core/src/session/tests.rs
+--- codex-rs/core/src/session/tests.rs.orig
++++ codex-rs/core/src/session/tests.rs
+@@ -3243,6 +3243,7 @@
              config.features.enabled(Feature::RuntimeMetrics),
              Session::build_model_client_beta_features_header(config.as_ref()),
          ),
@@ -11,7 +11,7 @@ Index: codex-rs/core/src/codex_tests.rs
          code_mode_service: crate::tools::code_mode::CodeModeService::new(
              config.js_repl_node_path.clone(),
          ),
-@@ -3793,6 +3794,7 @@
+@@ -4213,6 +4214,7 @@
              config.features.enabled(Feature::RuntimeMetrics),
              Session::build_model_client_beta_features_header(config.as_ref()),
          ),
