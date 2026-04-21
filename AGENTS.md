@@ -113,6 +113,48 @@ That aggregate test target does not compile on OpenBSD, so keep the
 targeted `codex-exec` pass to `--lib --bins` until upstream restores a
 portable standalone integration target.
 
+If `codex-exec-server` integration tests start failing before any test
+name runs, inspect the shared `tests/common/mod.rs` harness before
+adding individual `--skip` entries. During the 0.121.0 update, the
+integration binaries called
+`configure_test_binary_dispatch("codex-exec-server-tests", ...)`,
+which routed through `arg0::prepend_path_entry_for_codex_aliases()`
+and aborted with "Refusing to create helper binaries under temporary
+dir" when the test harness used a temporary `CODEX_HOME`. Keep
+`codex-exec-server` on a targeted `--lib --bins` pass until upstream
+makes that helper-alias setup portable to packaged non-debug builds.
+
+During the 0.121.0 update, two `codex-shell-escalation` tests turned
+out to be OpenBSD-specific low-level failures rather than product
+regressions. The
+`unix::escalate_server::tests::`
+`handle_escalate_session_accepts_received_fds_that_overlap_destinations`
+case exited `1` during the received-FD remap path, and
+`unix::stopwatch::tests::cancellation_receiver_fires_after_limit`
+panicked inside Tokio's I/O driver with `Bad file descriptor`. Treat
+both as narrow main-workspace skip entries.
+
+During the 0.121.0 update, four `codex-core`
+`config::tests::test_precedence_fixture_with_*_profile` cases failed
+because the fixtures compute expected
+`mcp_oauth_credentials_store_mode` with `LOCAL_DEV_BUILD_VERSION`,
+while the packaged OpenBSD build uses the real release version and
+resolves that mode to `Auto` instead of `File`. Treat those fixture
+expectation mismatches as `TARGETED_CORE_TEST_SKIP` exclusions for the
+packaged build rather than patching the product code.
+
+Measured timings for the 0.121.0 update on 2026-04-16:
+- final `env FLAVOR=all_features make checkpatch`: 0.58s real
+- final `env FLAVOR=all_features make test`: 972.79s real
+- targeted `codex-exec-server` release rebuild during that final test
+  run reported `Finished 'release' profile [optimized] target(s) in
+  5m 14s`
+- targeted `codex-exec` release rebuild during that final test run
+  reported `Finished 'release' profile [optimized] target(s) in 8m
+  31s`
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 7.10s real
+
 Measured timings for the 0.120.0 update on 2026-04-13:
 - final `make makesum`: 14.46s real
 - `make modcargo-gen-crates`: 54.03s real

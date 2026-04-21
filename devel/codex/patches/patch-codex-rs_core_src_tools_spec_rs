@@ -1,0 +1,48 @@
+Do not register code-mode handlers on OpenBSD.
+
+Index: codex-rs/core/src/tools/spec.rs
+--- codex-rs/core/src/tools/spec.rs.orig
++++ codex-rs/core/src/tools/spec.rs
+@@ -70,7 +70,9 @@
+     dynamic_tools: &[DynamicToolSpec],
+ ) -> ToolRegistryBuilder {
+     use crate::tools::handlers::ApplyPatchHandler;
++    #[cfg(not(target_os = "openbsd"))]
+     use crate::tools::handlers::CodeModeExecuteHandler;
++    #[cfg(not(target_os = "openbsd"))]
+     use crate::tools::handlers::CodeModeWaitHandler;
+     use crate::tools::handlers::DynamicToolHandler;
+     use crate::tools::handlers::JsReplHandler;
+@@ -150,7 +152,9 @@
+     });
+     let mut tool_search_handler = None;
+     let tool_suggest_handler = Arc::new(ToolSuggestHandler);
++    #[cfg(not(target_os = "openbsd"))]
+     let code_mode_handler = Arc::new(CodeModeExecuteHandler);
++    #[cfg(not(target_os = "openbsd"))]
+     let code_mode_wait_handler = Arc::new(CodeModeWaitHandler);
+     let js_repl_handler = Arc::new(JsReplHandler);
+     let js_repl_reset_handler = Arc::new(JsReplResetHandler);
+@@ -180,10 +184,20 @@
+                 builder.register_handler(handler.name, Arc::new(CloseAgentHandlerV2));
+             }
+             ToolHandlerKind::CodeModeExecute => {
+-                builder.register_handler(handler.name, code_mode_handler.clone());
++                #[cfg(not(target_os = "openbsd"))]
++                {
++                    builder.register_handler(handler.name, code_mode_handler.clone());
++                }
++                #[cfg(target_os = "openbsd")]
++                unreachable!("code mode should be disabled on OpenBSD");
+             }
+             ToolHandlerKind::CodeModeWait => {
+-                builder.register_handler(handler.name, code_mode_wait_handler.clone());
++                #[cfg(not(target_os = "openbsd"))]
++                {
++                    builder.register_handler(handler.name, code_mode_wait_handler.clone());
++                }
++                #[cfg(target_os = "openbsd")]
++                unreachable!("code mode should be disabled on OpenBSD");
+             }
+             ToolHandlerKind::DynamicTool => {
+                 builder.register_handler(handler.name, dynamic_tool_handler.clone());

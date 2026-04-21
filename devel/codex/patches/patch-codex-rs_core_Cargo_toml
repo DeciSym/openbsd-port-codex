@@ -1,0 +1,13 @@
+Disable the V8-backed code-mode dependency in codex-core on OpenBSD.
+
+Index: codex-rs/core/Cargo.toml
+--- codex-rs/core/Cargo.toml.orig
++++ codex-rs/core/Cargo.toml
+@@ -30,7 +30,6 @@
+ codex-app-server-protocol = { workspace = true }
+ codex-apply-patch = { workspace = true }
+ codex-async-utils = { workspace = true }
+-codex-code-mode = { workspace = true }
+ codex-connectors = { workspace = true }
+ codex-config = { workspace = true }
+ codex-core-skills = { workspace = true }

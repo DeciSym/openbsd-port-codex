@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.120.0
+V =		0.121.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -63,7 +63,8 @@ MODCARGO_TEST_ARGS +=	--ignore-rust-version
 MODCARGO_BUILD_ARGS +=	--all-features
 MODCARGO_TEST_ARGS +=	--all-features
 .endif
-MODCARGO_TEST_ARGS +=	--workspace --exclude codex-core --exclude codex-exec
+MODCARGO_TEST_ARGS +=	--workspace --exclude codex-core --exclude codex-exec \
+		--exclude codex-exec-server
 
 # Run workspace tests by default. Tests that require outbound network should
 # self-skip via skip_if_no_network! when this env var is present.
@@ -131,6 +132,18 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${ENSURE_TEST}restores_previous_install_when_final_validation_fails \
 	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
 	${SPEC_TEST}test_build_specs_artifact_tool_enabled \
+	augment_tool_spec_for_code_mode_augments_function_tools \
+	augment_tool_spec_for_code_mode_preserves_exec_tool_description \
+	tool_spec_to_code_mode_tool_definition_returns_augmented_nested_tools \
+	tool_spec_to_code_mode_tool_definition_skips_unsupported_variants \
+	create_wait_tool_matches_expected_spec \
+	create_code_mode_tool_matches_expected_spec \
+	code_mode_augments_mcp_tool_descriptions_with_namespaced_sample \
+	code_mode_preserves_nullable_and_literal_mcp_input_shapes \
+	code_mode_augments_builtin_tool_descriptions_with_typed_sample \
+	code_mode_only_exec_description_includes_full_nested_tool_details \
+	code_mode_exec_description_omits_nested_tool_details_when_not_code_mode_only \
+	code_mode_augments_mcp_tool_descriptions_with_structured_output_sample \
 	tests::typed_request_roundtrip_works \
 	tests::typed_request_reports_json_rpc_errors \
 	tests::caller_provided_session_source_is_applied \
@@ -142,6 +155,9 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	exec_process_write_then_read::local \
 	exec_process_write_then_read::remote \
 	config::tests::statsig_default_metrics_exporter_is_disabled_in_debug_builds \
+	unix::escalate_server::tests::\
+	handle_escalate_session_accepts_received_fds_that_overlap_destinations \
+	unix::stopwatch::tests::cancellation_receiver_fires_after_limit \
 	tests::next_event_surfaces_lagged_markers \
 	tests::accessors_expose_retained_shared_managers \
 	tests::list_all_connectors_uses_shared_cache \
@@ -174,7 +190,12 @@ TARGETED_CORE_TEST_SKIP =
 	shell_snapshot::tests::snapshot_shell_does_not_inherit_stdin \
 	shell_snapshot::tests::try_new_creates_and_deletes_snapshot_file \
 	shell_snapshot::tests::try_new_uses_distinct_generation_paths \
+	config::tests::test_precedence_fixture_with_gpt3_profile \
+	config::tests::test_precedence_fixture_with_gpt5_profile \
+	config::tests::test_precedence_fixture_with_o3_profile \
+	config::tests::test_precedence_fixture_with_zdr_profile \
 	${ARTIFACT_TEST}load_cached_runtime_reads_pinned_cache_path \
+	${SPEC_TEST}code_mode_only_restricts_model_tools_to_exec_tools \
 	${RUNTIME_WRAP_TEST}applies_explicit_path_override \
 	${RUNTIME_WRAP_TEST}does_not_embed_override_values_in_argv \
 	${RUNTIME_WRAP_TEST}keeps_snapshot_path_without_override \
@@ -195,11 +216,14 @@ do-install:
 		${PREFIX}/bin/${_b}
 .endfor
 
-# Keep the blanket workspace pass on targets that do not need aggregate
+# Keep the blanket workspace pass on targets that do not need problematic
 # integration binaries. `codex-core` is exercised below with explicit lib/bin
 # and standalone integration targets; `codex-exec` is limited to lib/bin tests
 # because upstream's only aggregate integration target currently pulls in a
-# macOS/Linux-only sandbox module that does not compile on OpenBSD.
+# macOS/Linux-only sandbox module that does not compile on OpenBSD;
+# `codex-exec-server` is limited to lib/bin tests because its integration
+# binaries unconditionally install arg0 helper aliases in a temporary
+# CODEX_HOME, which upstream now rejects outside debug builds.
 do-test:
 	@ulimit -n 1024 && ${MODCARGO_TEST_TARGET}
 	@ulimit -n 1024 && \
@@ -208,6 +232,12 @@ do-test:
 		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
 		--release ${TARGETED_TEST_ARGS} -p codex-core \
 		--lib --bins --test responses_headers -- ${TARGETED_CORE_TEST_SKIP}
+	@ulimit -n 1024 && \
+		cd ${WRKSRC} && \
+		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \
+		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
+		--release ${TARGETED_TEST_ARGS} -p codex-exec-server \
+		--lib --bins
 	@ulimit -n 1024 && \
 		cd ${WRKSRC} && \
 		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \

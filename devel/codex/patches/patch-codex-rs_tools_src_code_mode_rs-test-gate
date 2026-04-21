@@ -1,0 +1,13 @@
+Disable code-mode unit tests on OpenBSD.
+
+Index: codex-rs/tools/src/code_mode.rs
+--- codex-rs/tools/src/code_mode.rs.orig
++++ codex-rs/tools/src/code_mode.rs
+@@ -223,6 +316,6 @@
+     }
+ }
+ 
+-#[cfg(test)]
++#[cfg(all(test, not(target_os = "openbsd")))]
+ #[path = "code_mode_tests.rs"]
+ mod tests;

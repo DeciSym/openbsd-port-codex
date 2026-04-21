@@ -1,0 +1,25 @@
+Avoid code-mode-only tool filtering on OpenBSD.
+
+Index: codex-rs/core/src/tools/router.rs
+--- codex-rs/core/src/tools/router.rs.orig
++++ codex-rs/core/src/tools/router.rs
+@@ -66,6 +66,7 @@
+             dynamic_tools,
+         );
+         let (specs, registry) = builder.build();
++        #[cfg(not(target_os = "openbsd"))]
+         let model_visible_specs = if config.code_mode_only_enabled {
+             specs
+                 .iter()
+@@ -83,6 +84,11 @@
+                 .map(|configured_tool| configured_tool.spec.clone())
+                 .collect()
+         };
++        #[cfg(target_os = "openbsd")]
++        let model_visible_specs = specs
++            .iter()
++            .map(|configured_tool| configured_tool.spec.clone())
++            .collect();
+ 
+         Self {
+             registry,

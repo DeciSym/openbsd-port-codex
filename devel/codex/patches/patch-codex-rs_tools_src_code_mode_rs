@@ -1,0 +1,170 @@
+Provide OpenBSD no-op code-mode helpers in codex-tools.
+
+Index: codex-rs/tools/src/code_mode.rs
+--- codex-rs/tools/src/code_mode.rs.orig
++++ codex-rs/tools/src/code_mode.rs
+@@ -5,12 +5,47 @@
+ use crate::ResponsesApiTool;
+ use crate::ToolName;
+ use crate::ToolSpec;
++#[cfg(not(target_os = "openbsd"))]
+ use codex_code_mode::CodeModeToolKind;
+-use codex_code_mode::ToolDefinition as CodeModeToolDefinition;
+ use std::collections::BTreeMap;
+ 
++#[cfg(not(target_os = "openbsd"))]
++pub use codex_code_mode::PUBLIC_TOOL_NAME;
++#[cfg(not(target_os = "openbsd"))]
++pub use codex_code_mode::ToolDefinition as CodeModeToolDefinition;
++#[cfg(not(target_os = "openbsd"))]
++pub use codex_code_mode::ToolNamespaceDescription;
++#[cfg(not(target_os = "openbsd"))]
++pub use codex_code_mode::WAIT_TOOL_NAME;
++
++#[cfg(target_os = "openbsd")]
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct CodeModeToolDefinition {
++    pub name: String,
++    pub tool_name: ToolName,
++}
++
++#[cfg(target_os = "openbsd")]
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct ToolNamespaceDescription {
++    pub name: String,
++    pub description: String,
++}
++
++#[cfg(target_os = "openbsd")]
++pub const PUBLIC_TOOL_NAME: &str = "exec";
++#[cfg(target_os = "openbsd")]
++pub const WAIT_TOOL_NAME: &str = "wait";
++
+ /// Augment tool descriptions with code-mode-specific exec samples.
++#[cfg(target_os = "openbsd")]
+ pub fn augment_tool_spec_for_code_mode(spec: ToolSpec) -> ToolSpec {
++    spec
++}
++
++/// Augment tool descriptions with code-mode-specific exec samples.
++#[cfg(not(target_os = "openbsd"))]
++pub fn augment_tool_spec_for_code_mode(spec: ToolSpec) -> ToolSpec {
+     match spec {
+         ToolSpec::Function(mut tool) => {
+             let Some(description) =
+@@ -57,13 +92,29 @@
+ 
+ /// Convert a supported nested tool spec into the code-mode runtime shape,
+ /// including the code-mode-specific description sample.
++#[cfg(target_os = "openbsd")]
++pub fn tool_spec_to_code_mode_tool_definition(_spec: &ToolSpec) -> Option<CodeModeToolDefinition> {
++    None
++}
++
++/// Convert a supported nested tool spec into the code-mode runtime shape,
++/// including the code-mode-specific description sample.
++#[cfg(not(target_os = "openbsd"))]
+ pub fn tool_spec_to_code_mode_tool_definition(spec: &ToolSpec) -> Option<CodeModeToolDefinition> {
+     let definition = code_mode_tool_definition_for_spec(spec)?;
+     codex_code_mode::is_code_mode_nested_tool(&definition.name)
+         .then(|| codex_code_mode::augment_tool_definition(definition))
+ }
+ 
++#[cfg(target_os = "openbsd")]
+ pub fn collect_code_mode_tool_definitions<'a>(
++    _specs: impl IntoIterator<Item = &'a ToolSpec>,
++) -> Vec<CodeModeToolDefinition> {
++    Vec::new()
++}
++
++#[cfg(not(target_os = "openbsd"))]
++pub fn collect_code_mode_tool_definitions<'a>(
+     specs: impl IntoIterator<Item = &'a ToolSpec>,
+ ) -> Vec<CodeModeToolDefinition> {
+     let mut tool_definitions = specs
+@@ -77,7 +128,15 @@
+     tool_definitions
+ }
+ 
++#[cfg(target_os = "openbsd")]
+ pub fn collect_code_mode_exec_prompt_tool_definitions<'a>(
++    _specs: impl IntoIterator<Item = &'a ToolSpec>,
++) -> Vec<CodeModeToolDefinition> {
++    Vec::new()
++}
++
++#[cfg(not(target_os = "openbsd"))]
++pub fn collect_code_mode_exec_prompt_tool_definitions<'a>(
+     specs: impl IntoIterator<Item = &'a ToolSpec>,
+ ) -> Vec<CodeModeToolDefinition> {
+     let mut tool_definitions = specs
+@@ -90,7 +149,20 @@
+     tool_definitions
+ }
+ 
++#[cfg(target_os = "openbsd")]
+ pub fn create_wait_tool() -> ToolSpec {
++    ToolSpec::Function(ResponsesApiTool {
++        name: WAIT_TOOL_NAME.to_string(),
++        description: "Waits for exec output. Code mode is unavailable on OpenBSD.".to_string(),
++        strict: false,
++        parameters: JsonSchema::object(BTreeMap::new(), None, Some(false.into())),
++        output_schema: None,
++        defer_loading: None,
++    })
++}
++
++#[cfg(not(target_os = "openbsd"))]
++pub fn create_wait_tool() -> ToolSpec {
+     let properties = BTreeMap::from([
+         (
+             "cell_id".to_string(),
+@@ -135,9 +207,27 @@
+     })
+ }
+ 
++#[cfg(target_os = "openbsd")]
+ pub fn create_code_mode_tool(
++    _enabled_tools: &[CodeModeToolDefinition],
++    _namespace_descriptions: &BTreeMap<String, ToolNamespaceDescription>,
++    _code_mode_only_enabled: bool,
++) -> ToolSpec {
++    ToolSpec::Freeform(FreeformTool {
++        name: PUBLIC_TOOL_NAME.to_string(),
++        description: "Code mode is unavailable on OpenBSD.".to_string(),
++        format: FreeformToolFormat {
++            r#type: "grammar".to_string(),
++            syntax: "lark".to_string(),
++            definition: "start: /[\\s\\S]+/\n".to_string(),
++        },
++    })
++}
++
++#[cfg(not(target_os = "openbsd"))]
++pub fn create_code_mode_tool(
+     enabled_tools: &[CodeModeToolDefinition],
+-    namespace_descriptions: &BTreeMap<String, codex_code_mode::ToolNamespaceDescription>,
++    namespace_descriptions: &BTreeMap<String, ToolNamespaceDescription>,
+     code_mode_only_enabled: bool,
+ ) -> ToolSpec {
+     const CODE_MODE_FREEFORM_GRAMMAR: &str = r#"
+@@ -165,16 +255,19 @@
+     })
+ }
+ 
++#[cfg(not(target_os = "openbsd"))]
+ fn augmented_description_for_spec(spec: &ToolSpec) -> Option<String> {
+     code_mode_tool_definition_for_spec(spec)
+         .map(codex_code_mode::augment_tool_definition)
+         .map(|definition| definition.description)
+ }
+ 
++#[cfg(not(target_os = "openbsd"))]
+ fn code_mode_tool_definition_for_spec(spec: &ToolSpec) -> Option<CodeModeToolDefinition> {
+     code_mode_tool_definitions_for_spec(spec).into_iter().next()
+ }
+ 
++#[cfg(not(target_os = "openbsd"))]
+ fn code_mode_tool_definitions_for_spec(spec: &ToolSpec) -> Vec<CodeModeToolDefinition> {
+     match spec {
+         ToolSpec::Function(tool) => {
