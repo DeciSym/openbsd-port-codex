@@ -1,0 +1,13 @@
+Exclude code-mode dispatch-trace tests on OpenBSD.
+
+Index: codex-rs/core/src/tools/tool_dispatch_trace.rs
+--- codex-rs/core/src/tools/tool_dispatch_trace.rs.orig
++++ codex-rs/core/src/tools/tool_dispatch_trace.rs
+@@ -134,6 +134,6 @@ fn tool_dispatch_payload(payload: &ToolPayload) -> Too
+     }
+ }
+ 
+-#[cfg(test)]
++#[cfg(all(test, not(target_os = "openbsd")))]
+ #[path = "tool_dispatch_trace_tests.rs"]
+ mod tests;

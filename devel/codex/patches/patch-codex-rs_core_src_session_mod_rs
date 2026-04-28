@@ -3,7 +3,7 @@ Disable code-mode in session setup on OpenBSD.
 Index: codex-rs/core/src/session/mod.rs
 --- codex-rs/core/src/session/mod.rs.orig
 +++ codex-rs/core/src/session/mod.rs
-@@ -496,6 +496,18 @@
+@@ -517,6 +517,18 @@ impl Codex {
              warn!("{message}");
              config.startup_warnings.push(message);
          }

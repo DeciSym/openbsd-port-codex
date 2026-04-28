@@ -3,7 +3,7 @@ Do not start the code-mode worker on OpenBSD.
 Index: codex-rs/core/src/session/turn.rs
 --- codex-rs/core/src/session/turn.rs.orig
 +++ codex-rs/core/src/session/turn.rs
-@@ -1030,6 +1030,7 @@
+@@ -1041,6 +1041,7 @@ async fn run_sampling_request(
          Arc::clone(&turn_context),
          Arc::clone(&turn_diff_tracker),
      );

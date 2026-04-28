@@ -3,7 +3,7 @@ Do not register code-mode handlers on OpenBSD.
 Index: codex-rs/core/src/tools/spec.rs
 --- codex-rs/core/src/tools/spec.rs.orig
 +++ codex-rs/core/src/tools/spec.rs
-@@ -70,7 +70,9 @@
+@@ -77,7 +77,9 @@ pub(crate) fn build_specs_with_discoverable_tools(
      dynamic_tools: &[DynamicToolSpec],
  ) -> ToolRegistryBuilder {
      use crate::tools::handlers::ApplyPatchHandler;
@@ -13,8 +13,8 @@ Index: codex-rs/core/src/tools/spec.rs
      use crate::tools::handlers::CodeModeWaitHandler;
      use crate::tools::handlers::DynamicToolHandler;
      use crate::tools::handlers::JsReplHandler;
-@@ -150,7 +152,9 @@
-     });
+@@ -165,7 +167,9 @@ pub(crate) fn build_specs_with_discoverable_tools(
+         .collect::<Vec<_>>();
      let mut tool_search_handler = None;
      let tool_suggest_handler = Arc::new(ToolSuggestHandler);
 +    #[cfg(not(target_os = "openbsd"))]
@@ -23,7 +23,7 @@ Index: codex-rs/core/src/tools/spec.rs
      let code_mode_wait_handler = Arc::new(CodeModeWaitHandler);
      let js_repl_handler = Arc::new(JsReplHandler);
      let js_repl_reset_handler = Arc::new(JsReplResetHandler);
-@@ -180,10 +184,20 @@
+@@ -201,10 +205,20 @@ pub(crate) fn build_specs_with_discoverable_tools(
                  builder.register_handler(handler.name, Arc::new(CloseAgentHandlerV2));
              }
              ToolHandlerKind::CodeModeExecute => {

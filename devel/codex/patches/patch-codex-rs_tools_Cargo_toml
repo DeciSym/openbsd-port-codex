@@ -3,7 +3,7 @@ Disable the V8-backed code-mode dependency in codex-tools on OpenBSD.
 Index: codex-rs/tools/Cargo.toml
 --- codex-rs/tools/Cargo.toml.orig
 +++ codex-rs/tools/Cargo.toml
-@@ -9,7 +9,6 @@
+@@ -9,7 +9,6 @@ workspace = true
  
  [dependencies]
  codex-app-server-protocol = { workspace = true }

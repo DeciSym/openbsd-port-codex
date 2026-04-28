@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.122.0
+V =		0.125.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -90,10 +90,12 @@ CORE_TEST =	tests::
 ARTIFACT_TEST =	tools::handlers::artifacts::tests::
 SPEC_TEST =	tools::spec::tests::
 RUNTIME_TEST =	tools::runtimes::tests::
+MULTI_AGENT_TEST =	tools::handlers::multi_agents::tests::multi_agent_v2_
 ENSURE_TEST =	${CORE_TEST}ensure_installed_
 RUNTIME_WRAP_TEST =	${RUNTIME_TEST}maybe_wrap_shell_lc_with_snapshot_
 SHELL_TEST =	shell_snapshot::tests::
-INPROC_TEST =	in_process::tests::in_process_start_
+INPROC_BASE_TEST =	in_process::tests::in_process_
+INPROC_TEST =	${INPROC_BASE_TEST}start_
 
 MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 		--skip ${UPDATES_TEST}extract_version_from_brew_api_json
@@ -151,6 +153,7 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	tests::tiny_channel_capacity_still_supports_request_roundtrip \
 	config_api::tests::batch_write_reloads_user_config_when_requested \
 	tests::runtime_start_args_forward_environment_manager \
+	tests::runtime_start_args_use_remote_thread_config_loader_when_configured \
 	tests::threads_started_via_app_server_are_visible_through_typed_requests \
 	tests::shutdown_completes_promptly_without_retained_managers \
 	exec_process_write_then_read::local \
@@ -163,10 +166,11 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	tests::accessors_expose_retained_shared_managers \
 	tests::list_all_connectors_uses_shared_cache \
 		tests::shared_thread_manager_tracks_threads_started_via_app_server \
-		tests::shutdown_completes_promptly_with_retained_shared_managers \
+	tests::shutdown_completes_promptly_with_retained_shared_managers \
 		tests::pty_spawn_can_preserve_inherited_fds \
 	tests::pipe_spawn_no_stdin_can_preserve_inherited_fds \
 	unix::socket::tests::async_socket_round_trips_payload_and_fds \
+	${INPROC_BASE_TEST}allows_device_key_requests_to_reach_device_key_api \
 		${INPROC_TEST}initializes_and_handles_typed_v2_request \
 		${INPROC_TEST}uses_requested_session_source_for_thread_start \
 		${INPROC_TEST}clamps_zero_channel_capacity \
@@ -200,9 +204,13 @@ TARGETED_CORE_TEST_SKIP =
 	${RUNTIME_WRAP_TEST}applies_explicit_path_override \
 	${RUNTIME_WRAP_TEST}does_not_embed_override_values_in_argv \
 	${RUNTIME_WRAP_TEST}keeps_snapshot_path_without_override \
+	${RUNTIME_WRAP_TEST}keeps_user_proxy_env_when_proxy_inactive \
 	${RUNTIME_WRAP_TEST}preserves_unset_override_variables \
 	${RUNTIME_WRAP_TEST}restores_explicit_override_precedence \
 	${RUNTIME_WRAP_TEST}restores_codex_thread_id_from_env \
+	${RUNTIME_WRAP_TEST}restores_live_env_when_snapshot_proxy_active \
+	${RUNTIME_WRAP_TEST}restores_proxy_env_from_process_env \
+	${MULTI_AGENT_TEST}followup_task_interrupts_busy_child_without_losing_message \
 	tools::spec::tests::test_build_specs_artifact_tool_enabled
 TARGETED_CORE_TEST_SKIP +=	--skip ${_t}
 .endfor

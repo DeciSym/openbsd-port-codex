@@ -3,7 +3,7 @@ Avoid code-mode-only tool filtering on OpenBSD.
 Index: codex-rs/core/src/tools/router.rs
 --- codex-rs/core/src/tools/router.rs.orig
 +++ codex-rs/core/src/tools/router.rs
-@@ -66,6 +66,7 @@
+@@ -71,6 +71,7 @@ impl ToolRouter {
              dynamic_tools,
          );
          let (specs, registry) = builder.build();
@@ -11,7 +11,7 @@ Index: codex-rs/core/src/tools/router.rs
          let model_visible_specs = if config.code_mode_only_enabled {
              specs
                  .iter()
-@@ -83,6 +84,11 @@
+@@ -88,6 +89,11 @@ impl ToolRouter {
                  .map(|configured_tool| configured_tool.spec.clone())
                  .collect()
          };

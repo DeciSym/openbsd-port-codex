@@ -8,7 +8,7 @@ so the override is ignored and config-layer tests fail.
 Index: codex-rs/app-server/src/main.rs
 --- codex-rs/app-server/src/main.rs.orig
 +++ codex-rs/app-server/src/main.rs
-@@ -46,15 +46,12 @@ fn main() -> anyhow::Result<()> {
+@@ -78,15 +78,12 @@ fn disable_managed_config_from_debug_env() -> bool {
  }
  
  fn managed_config_path_from_debug_env() -> Option<PathBuf> {

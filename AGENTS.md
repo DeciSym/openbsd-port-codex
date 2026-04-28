@@ -64,6 +64,17 @@ while loading analytics config under ports test execution. Treat that
 class of failure as an OpenBSD port test exclusion, not as a source
 patch.
 
+During the 0.124.0 update, `codex-app-server`
+`in_process::tests::in_process_allows_device_key_requests_to_reach_device_key_api`
+failed only in the full packaged `all_features` suite with
+`default config should load: Os { code: 13, kind: PermissionDenied,
+message: "Permission denied" }` from the fallback default-config
+loader, but the already-built `target/release/deps/codex_app_server-*`
+binary passed both the exact test and a full `--test-threads=1`
+rerun. Treat that as the same host-config/suite-interference class and
+keep it as a narrow main-workspace skip rather than patching the
+source.
+
 Shell snapshot tests need a second check: if a `codex-core`
 `shell_snapshot::tests::try_new_*` case fails from
 `ShellSnapshot::try_new()` with `validation_failed`, treat it as the
@@ -78,6 +89,17 @@ uses GNU `head -c`, which OpenBSD `head` does not implement, and
 `tools::runtimes::tests::maybe_wrap_shell_lc_with_snapshot_restores_codex_thread_id_from_env`
 hardcodes `/bin/bash` instead of the OpenBSD `bash` path. Treat both as
 `TARGETED_CORE_TEST_SKIP` exclusions.
+
+During the 0.123.0 update, three more `codex-core`
+`tools::runtimes::tests::maybe_wrap_shell_lc_with_snapshot_*` cases
+landed in that same `/bin/bash` portability class:
+`restores_proxy_env_from_process_env`,
+`keeps_user_proxy_env_when_proxy_inactive`, and
+`restores_live_env_when_snapshot_proxy_active` all failed with
+`Os { code: 2, kind: NotFound, message: "No such file or directory" }`
+when the rewritten command tried to execute `/bin/bash`. Treat those as
+the same narrow `TARGETED_CORE_TEST_SKIP` exclusion class instead of
+patching the tests.
 
 For `codex-utils-pty`, distinguish PTY inherited-FD failures from the
 pipe path. During the 0.116.0 update,
@@ -102,6 +124,16 @@ already-built test binary under
 exact test name and when run with `--test-threads=1`. Use that pattern
 to distinguish flaky shared-state tests from real OpenBSD behavior
 breakage.
+
+During the 0.123.0 update, the `codex-core`
+`tools::handlers::multi_agents::tests::`
+`multi_agent_v2_followup_task_interrupts_busy_child_without_losing_message`
+case failed only in the full targeted suite with
+`redirected followup envelope should appear in history: Elapsed(())`,
+but the already-built `target/release/deps/codex_core-*` binary passed
+the exact test immediately. Treat that as a narrow OpenBSD suite-load
+timing flake and keep it on `TARGETED_CORE_TEST_SKIP` once the exact
+rerun confirms the product behavior itself is still intact.
 
 If `codex-exec` upstream collapses standalone integration tests into a
 single aggregate `all` target, inspect whether that target still
@@ -158,6 +190,105 @@ deduplicating by hand. During the 0.122.0 update, upstream needed both
 `prost-build`/`prost-types` `0.12.6` and `0.14.3`: the `pbjson-build`
 stack still depends on the `0.12` line, while `tonic-prost-build`
 pulls the `0.14` line.
+
+During the 0.124.0 update, `make modcargo-gen-crates` still emitted the
+refreshed `MODCARGO_CRATES` block to stdout instead of rewriting
+`crates.inc` in place. Refresh `crates.inc` explicitly from that
+output before trusting the next `port-lib-depends-check`.
+
+During the 0.125.0 update, `codex-app-server-client`
+`tests::runtime_start_args_use_remote_thread_config_loader_when_configured`
+failed in the full packaged `all_features` suite with
+`default config should load: Os { code: 13, kind: PermissionDenied,
+message: "Permission denied" }`. Treat that as the same packaged
+host-config/default-config-loader class as the other app-server-client
+and app-server skips, and keep it as a narrow main-workspace skip.
+
+During the 0.125.0 update, `rollout-trace` started depending on
+`codex-code-mode`. Since the OpenBSD port excludes the V8-backed
+code-mode crate, keep OpenBSD patches that remove that dependency,
+provide local trace payload types in `rollout-trace`, and use the
+plain `"exec"` tool name fallback for trace suppression.
+
+During the 0.125.0 update, the new `codex-core`
+`tool_dispatch_trace` test module imported `tools::code_mode`, which
+is disabled on OpenBSD. Exclude that test module on OpenBSD with
+`#[cfg(all(test, not(target_os = "openbsd")))]` rather than restoring
+the disabled code-mode module.
+
+Measured timings for the 0.125.0 update on 2026-04-27:
+- `make makesum`: 9.47s real
+- `make modcargo-gen-crates`: 58.49s real; the generated crate block
+  matched the existing `crates.inc`
+- final `env FLAVOR=all_features make checkpatch`: 61.29s real after
+  refreshing patches; 60.91s real after the `tool_dispatch_trace`
+  OpenBSD test guard
+- `env FLAVOR=all_features make port-lib-depends-check`: 1167.03s
+  real; the flavored release build phase reported `Finished 'release'
+  profile [optimized] target(s) in 19m 21s`
+- `env FLAVOR=all_features make update-plist`: 1.73s real
+- `env FLAVOR=all_features make package`: 14.00s real
+- first `env FLAVOR=all_features make test`: 1391.03s real; the
+  workspace release build reported `Finished 'release' profile
+  [optimized] target(s) in 23m 05s` and then failed at
+  `tests::runtime_start_args_use_remote_thread_config_loader_when_configured`
+- second `env FLAVOR=all_features make test`: 749.99s real; failed
+  compiling the targeted `codex-core` lib test because
+  `tool_dispatch_trace_tests.rs` imported OpenBSD-disabled
+  `tools::code_mode`
+- final `env FLAVOR=all_features make test`: 2723.98s real; the
+  workspace release build reported `Finished 'release' profile
+  [optimized] target(s) in 16m 08s`, the targeted `codex-core` release
+  rebuild reported `Finished 'release' profile [optimized] target(s)
+  in 10m 24s`, the targeted `codex-exec-server` release rebuild
+  reported `Finished 'release' profile [optimized] target(s) in 5m
+  57s`, and the targeted `codex-exec` release rebuild reported
+  `Finished 'release' profile [optimized] target(s) in 9m 55s`
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 6.78s real
+
+Measured timings for the 0.124.0 update on 2026-04-24:
+- first `make makesum`: 8.82s real; second `make makesum` after the
+  initial crate refresh: 7.44s real; final `make makesum` after fixing
+  `crates.inc`: 16.56s real
+- `make modcargo-gen-crates`: 516.09s real
+- final `env FLAVOR=all_features make checkpatch`: 56.96s real on the
+  first validation pass; 0.75s real after fixing `crates.inc`; 0.76s
+  real after the app-server skip update; 0.65s real after the final
+  Makefile line-wrap fix
+- final `env FLAVOR=all_features make port-lib-depends-check`:
+  1305.18s real; the flavored release build phase reported `Finished
+  'release' profile [optimized] target(s) in 19m 48s`
+- `env FLAVOR=all_features make update-plist`: 1.75s real
+- `env FLAVOR=all_features make package`: 13.89s real
+- first `env FLAVOR=all_features make test`: 1397.30s real; failed at
+  `in_process::tests::in_process_allows_device_key_requests_to_reach_device_key_api`
+- final `env FLAVOR=all_features make test`: 2057.90s real; the
+  targeted `codex-exec` release rebuild reported `Finished 'release'
+  profile [optimized] target(s) in 9m 24s`
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 7.51s real
+
+Measured timings for the 0.123.0 update on 2026-04-23:
+- first successful `make makesum`: 8.38s real; second `make makesum`
+  after regenerating `crates.inc`: 25.01s real
+- `make modcargo-gen-crates`: 52.33s real
+- final `env FLAVOR=all_features make checkpatch`: 54.96s real on the
+  first validation pass; 0.64s real after the test-skip update; 0.76s
+  real after the final Makefile line-wrap fix
+- `env FLAVOR=all_features make port-lib-depends-check`: 6099.87s
+  real; the flavored release build phase reported `Finished 'release'
+  profile [optimized] target(s) in 100m 40s`
+- `env FLAVOR=all_features make update-plist`: 1.39s real
+- `env FLAVOR=all_features make package`: 12.79s real
+- first `env FLAVOR=all_features make test`: 10623.93s real; failed in
+  targeted `codex-core` after 1615 tests passed and four new skips were
+  identified
+- final `env FLAVOR=all_features make test`: 3748.01s real; the
+  targeted `codex-exec` release rebuild reported `Finished 'release'
+  profile [optimized] target(s) in 38m 47s`
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 5.81s real
 
 Measured timings for the 0.122.0 update on 2026-04-21:
 - `make makesum`: 8.66s real on the initial release bump; 8.87s real

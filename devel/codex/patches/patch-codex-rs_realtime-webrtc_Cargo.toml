@@ -3,7 +3,7 @@ Avoid fetching the rust-sdks workspace from GitHub during offline builds.
 Index: codex-rs/realtime-webrtc/Cargo.toml
 --- codex-rs/realtime-webrtc/Cargo.toml.orig
 +++ codex-rs/realtime-webrtc/Cargo.toml
-@@ -13,7 +13,7 @@
+@@ -13,7 +13,7 @@ thiserror = { workspace = true }
  tokio = { workspace = true, features = ["rt-multi-thread"] }
  
  [target.'cfg(target_os = "macos")'.dependencies]

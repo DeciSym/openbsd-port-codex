@@ -3,7 +3,7 @@ Disable code-mode unit tests on OpenBSD.
 Index: codex-rs/tools/src/code_mode.rs
 --- codex-rs/tools/src/code_mode.rs.orig
 +++ codex-rs/tools/src/code_mode.rs
-@@ -223,6 +316,6 @@
+@@ -330,6 +330,6 @@ pub fn code_mode_name_for_tool_name(tool_name: &ToolNa
      }
  }
  

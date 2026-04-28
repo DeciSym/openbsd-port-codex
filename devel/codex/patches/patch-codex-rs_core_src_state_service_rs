@@ -3,7 +3,7 @@ Remove the session-scoped code-mode service on OpenBSD.
 Index: codex-rs/core/src/state/service.rs
 --- codex-rs/core/src/state/service.rs.orig
 +++ codex-rs/core/src/state/service.rs
-@@ -12,6 +12,7 @@
+@@ -11,6 +11,7 @@ use crate::guardian::GuardianRejectionCircuitBreaker;
  use crate::mcp::McpManager;
  use crate::plugins::PluginsManager;
  use crate::skills_watcher::SkillsWatcher;
@@ -11,11 +11,11 @@ Index: codex-rs/core/src/state/service.rs
  use crate::tools::code_mode::CodeModeService;
  use crate::tools::network_approval::NetworkApprovalService;
  use crate::tools::sandboxing::ApprovalStore;
-@@ -63,6 +64,7 @@
-     pub(crate) thread_store: LocalThreadStore,
+@@ -67,6 +68,7 @@ pub(crate) struct SessionServices {
+     pub(crate) thread_store: Arc<dyn ThreadStore>,
      /// Session-scoped model client shared across turns.
      pub(crate) model_client: ModelClient,
 +    #[cfg(not(target_os = "openbsd"))]
      pub(crate) code_mode_service: CodeModeService,
-     pub(crate) environment: Option<Arc<Environment>>,
- }
+     /// Shared process-level environment registry. Sessions carry an `Arc` handle so they can pass
+     /// the same manager through child-thread spawn paths without reconstructing it.
