@@ -1,0 +1,40 @@
+Apply the prepared OpenBSD sandbox profile in the shell child before exec.
+
+Index: codex-rs/core/src/spawn.rs
+--- codex-rs/core/src/spawn.rs.orig
++++ codex-rs/core/src/spawn.rs
+@@ -1,3 +1,5 @@
++#[cfg(target_os = "openbsd")]
++use crate::openbsd_sandbox::OpenBsdSandboxProfile;
+ use codex_network_proxy::NetworkProxy;
+ use codex_utils_absolute_path::AbsolutePathBuf;
+ use std::collections::HashMap;
+@@ -42,6 +44,8 @@
+     pub args: Vec<String>,
+     pub arg0: Option<&'a str>,
+     pub cwd: AbsolutePathBuf,
++    #[cfg(target_os = "openbsd")]
++    pub openbsd_sandbox: Option<OpenBsdSandboxProfile>,
+     pub network_sandbox_policy: NetworkSandboxPolicy,
+     pub network: Option<&'a NetworkProxy>,
+     pub stdio_policy: StdioPolicy,
+@@ -54,6 +58,8 @@
+         args,
+         arg0,
+         cwd,
++        #[cfg(target_os = "openbsd")]
++        openbsd_sandbox,
+         network_sandbox_policy,
+         network,
+         stdio_policy,
+@@ -99,6 +105,10 @@
+                 // This prctl call effectively requests, "deliver SIGTERM when my
+                 // current parent dies."
+                 codex_utils_pty::process_group::set_parent_death_signal(parent_pid)?;
++            }
++            #[cfg(target_os = "openbsd")]
++            if let Some(profile) = openbsd_sandbox.as_ref() {
++                crate::openbsd_sandbox::apply_child_sandbox(profile)?;
+             }
+             Ok(())
+         });

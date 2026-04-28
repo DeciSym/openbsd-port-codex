@@ -1,0 +1,13 @@
+Set sandbox policy cwd in user shell exec requests.
+
+Index: codex-rs/core/src/tasks/user_shell.rs
+--- codex-rs/core/src/tasks/user_shell.rs.orig
++++ codex-rs/core/src/tasks/user_shell.rs
+@@ -171,6 +171,7 @@
+         expiration: USER_SHELL_TIMEOUT_MS.into(),
+         capture_policy: ExecCapturePolicy::ShellTool,
+         sandbox: SandboxType::None,
++        sandbox_policy_cwd: cwd.clone(),
+         windows_sandbox_policy_cwd: cwd.clone(),
+         windows_sandbox_level: turn_context.windows_sandbox_level,
+         windows_sandbox_private_desktop: turn_context

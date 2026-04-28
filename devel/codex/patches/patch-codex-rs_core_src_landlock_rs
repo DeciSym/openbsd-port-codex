@@ -1,0 +1,14 @@
+Initialize the OpenBSD sandbox field when using the Linux landlock spawn path.
+
+Index: codex-rs/core/src/landlock.rs
+--- codex-rs/core/src/landlock.rs.orig
++++ codex-rs/core/src/landlock.rs
+@@ -68,6 +68,8 @@
+         args,
+         arg0: Some(&arg0),
+         cwd: command_cwd,
++        #[cfg(target_os = "openbsd")]
++        openbsd_sandbox: None,
+         network_sandbox_policy,
+         network,
+         stdio_policy,

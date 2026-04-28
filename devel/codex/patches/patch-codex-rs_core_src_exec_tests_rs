@@ -1,0 +1,35 @@
+Update direct exec tests for the OpenBSD sandbox profile argument.
+
+Index: codex-rs/core/src/exec_tests.rs
+--- codex-rs/core/src/exec_tests.rs.orig
++++ codex-rs/core/src/exec_tests.rs
+@@ -280,6 +280,9 @@
+         NetworkSandboxPolicy::Enabled,
+         /*stdout_stream*/ None,
+         /*after_spawn*/ None,
++        #[cfg(target_os = "openbsd")]
++        /*openbsd_sandbox*/
++        None,
+     )
+     .await?;
+ 
+@@ -316,6 +319,9 @@
+             NetworkSandboxPolicy::Enabled,
+             /*stdout_stream*/ None,
+             /*after_spawn*/ None,
++            #[cfg(target_os = "openbsd")]
++            /*openbsd_sandbox*/
++            None,
+         ),
+     )
+     .await
+@@ -973,6 +979,9 @@
+         NetworkSandboxPolicy::Restricted,
+         /*stdout_stream*/ None,
+         /*after_spawn*/ None,
++        #[cfg(target_os = "openbsd")]
++        /*openbsd_sandbox*/
++        None,
+     )
+     .await?;
+     assert!(output.timed_out);

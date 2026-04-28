@@ -1,0 +1,105 @@
+Cover OpenBSD sandbox selection and transform behavior.
+
+Index: codex-rs/sandboxing/src/manager_tests.rs
+--- codex-rs/sandboxing/src/manager_tests.rs.orig
++++ codex-rs/sandboxing/src/manager_tests.rs
+@@ -71,7 +71,20 @@
+     assert_eq!(sandbox, expected);
+ }
+ 
++#[cfg(target_os = "openbsd")]
+ #[test]
++fn openbsd_platform_sandbox_is_pledge_unveil() {
++    assert_eq!(
++        get_platform_sandbox(/*windows_sandbox_enabled*/ false),
++        Some(SandboxType::OpenBsdPledgeUnveil)
++    );
++    assert_eq!(
++        SandboxType::OpenBsdPledgeUnveil.as_metric_tag(),
++        "openbsd_pledge_unveil"
++    );
++}
++
++#[test]
+ fn transform_preserves_unrestricted_file_system_policy_for_restricted_network() {
+     let manager = SandboxManager::new();
+     let cwd = AbsolutePathBuf::current_dir().expect("current dir");
+@@ -107,6 +120,78 @@
+     assert_eq!(
+         exec_request.network_sandbox_policy,
+         NetworkSandboxPolicy::Restricted
++    );
++}
++
++#[cfg(target_os = "openbsd")]
++#[test]
++fn transform_openbsd_sandbox_keeps_command_for_child_pre_exec_enforcement() {
++    let manager = SandboxManager::new();
++    let cwd = AbsolutePathBuf::current_dir().expect("current dir");
++    let exec_request = manager
++        .transform(SandboxTransformRequest {
++            command: SandboxCommand {
++                program: "/bin/sh".into(),
++                args: vec!["-c".to_string(), "true".to_string()],
++                cwd: cwd.clone(),
++                env: HashMap::new(),
++                additional_permissions: None,
++            },
++            policy: &SandboxPolicy::new_read_only_policy(),
++            file_system_policy: &FileSystemSandboxPolicy::from(
++                &SandboxPolicy::new_read_only_policy(),
++            ),
++            network_policy: NetworkSandboxPolicy::Restricted,
++            sandbox: SandboxType::OpenBsdPledgeUnveil,
++            enforce_managed_network: false,
++            network: None,
++            sandbox_policy_cwd: cwd.as_path(),
++            codex_linux_sandbox_exe: None,
++            use_legacy_landlock: false,
++            windows_sandbox_level: WindowsSandboxLevel::Disabled,
++            windows_sandbox_private_desktop: false,
++        })
++        .expect("transform");
++
++    assert_eq!(
++        exec_request.command,
++        vec!["/bin/sh".to_string(), "-c".to_string(), "true".to_string()]
++    );
++    assert_eq!(exec_request.arg0, None);
++    assert_eq!(exec_request.sandbox, SandboxType::OpenBsdPledgeUnveil);
++}
++
++#[cfg(target_os = "openbsd")]
++#[test]
++fn transform_openbsd_sandbox_fails_closed_for_managed_network() {
++    let manager = SandboxManager::new();
++    let cwd = AbsolutePathBuf::current_dir().expect("current dir");
++    let err = manager
++        .transform(SandboxTransformRequest {
++            command: SandboxCommand {
++                program: "true".into(),
++                args: Vec::new(),
++                cwd: cwd.clone(),
++                env: HashMap::new(),
++                additional_permissions: None,
++            },
++            policy: &SandboxPolicy::DangerFullAccess,
++            file_system_policy: &FileSystemSandboxPolicy::unrestricted(),
++            network_policy: NetworkSandboxPolicy::Enabled,
++            sandbox: SandboxType::OpenBsdPledgeUnveil,
++            enforce_managed_network: true,
++            network: None,
++            sandbox_policy_cwd: cwd.as_path(),
++            codex_linux_sandbox_exe: None,
++            use_legacy_landlock: false,
++            windows_sandbox_level: WindowsSandboxLevel::Disabled,
++            windows_sandbox_private_desktop: false,
++        })
++        .expect_err("managed network enforcement is not silently bypassed");
++
++    assert_eq!(
++        err.to_string(),
++        "OpenBSD sandbox does not yet support managed network proxy enforcement"
+     );
+ }
+ 

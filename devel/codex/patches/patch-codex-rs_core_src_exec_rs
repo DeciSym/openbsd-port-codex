@@ -1,0 +1,92 @@
+Prepare and pass OpenBSD sandbox profiles through the direct shell exec path.
+
+Index: codex-rs/core/src/exec.rs
+--- codex-rs/core/src/exec.rs.orig
++++ codex-rs/core/src/exec.rs
+@@ -361,16 +361,29 @@
+         expiration,
+         capture_policy,
+         sandbox,
++        sandbox_policy_cwd,
+         windows_sandbox_policy_cwd: _,
+         windows_sandbox_level,
+         windows_sandbox_private_desktop,
+         sandbox_policy,
+-        // TODO(mbolin): Use file_system_sandbox_policy instead of sandbox_policy.
+-        file_system_sandbox_policy: _,
++        file_system_sandbox_policy,
+         network_sandbox_policy,
+         windows_sandbox_filesystem_overrides,
+         arg0,
+     } = exec_request;
++    #[cfg(target_os = "openbsd")]
++    let openbsd_sandbox = if sandbox == SandboxType::OpenBsdPledgeUnveil {
++        Some(
++            crate::openbsd_sandbox::OpenBsdSandboxProfile::new(
++                &file_system_sandbox_policy,
++                network_sandbox_policy,
++                &sandbox_policy_cwd,
++            )
++            .map_err(CodexErr::Io)?,
++        )
++    } else {
++        None
++    };
+ 
+     let params = ExecParams {
+         command,
+@@ -392,6 +405,8 @@
+         network_sandbox_policy,
+         stdout_stream,
+         after_spawn,
++        #[cfg(target_os = "openbsd")]
++        openbsd_sandbox,
+         sandbox,
+         &sandbox_policy,
+         windows_sandbox_filesystem_overrides.as_ref(),
+@@ -406,6 +421,9 @@
+     network_sandbox_policy: NetworkSandboxPolicy,
+     stdout_stream: Option<StdoutStream>,
+     after_spawn: Option<Box<dyn FnOnce() + Send>>,
++    #[cfg(target_os = "openbsd")] openbsd_sandbox: Option<
++        crate::openbsd_sandbox::OpenBsdSandboxProfile,
++    >,
+     #[cfg_attr(not(windows), allow(unused_variables))] sandbox: SandboxType,
+     #[cfg_attr(not(windows), allow(unused_variables))] sandbox_policy: &SandboxPolicy,
+     #[cfg_attr(not(windows), allow(unused_variables))] windows_sandbox_filesystem_overrides: Option<
+@@ -418,7 +436,15 @@
+             .await;
+     }
+ 
+-    exec(params, network_sandbox_policy, stdout_stream, after_spawn).await
++    exec(
++        params,
++        network_sandbox_policy,
++        stdout_stream,
++        after_spawn,
++        #[cfg(target_os = "openbsd")]
++        openbsd_sandbox,
++    )
++    .await
+ }
+ 
+ #[cfg(target_os = "windows")]
+@@ -844,6 +870,9 @@
+     network_sandbox_policy: NetworkSandboxPolicy,
+     stdout_stream: Option<StdoutStream>,
+     after_spawn: Option<Box<dyn FnOnce() + Send>>,
++    #[cfg(target_os = "openbsd")] openbsd_sandbox: Option<
++        crate::openbsd_sandbox::OpenBsdSandboxProfile,
++    >,
+ ) -> Result<RawExecToolCallOutput> {
+     let ExecParams {
+         command,
+@@ -878,6 +907,8 @@
+         args: args.into(),
+         arg0: arg0_ref,
+         cwd,
++        #[cfg(target_os = "openbsd")]
++        openbsd_sandbox,
+         network_sandbox_policy,
+         // The environment already has attempt-scoped proxy settings from
+         // apply_to_env_for_attempt above. Passing network here would reapply

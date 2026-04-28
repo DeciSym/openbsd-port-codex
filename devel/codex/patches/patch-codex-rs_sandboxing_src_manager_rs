@@ -1,0 +1,67 @@
+Select an OpenBSD pledge/unveil sandbox backend and fail closed for managed network mode.
+
+Index: codex-rs/sandboxing/src/manager.rs
+--- codex-rs/sandboxing/src/manager.rs.orig
++++ codex-rs/sandboxing/src/manager.rs
+@@ -25,6 +25,8 @@
+     None,
+     MacosSeatbelt,
+     LinuxSeccomp,
++    #[cfg(target_os = "openbsd")]
++    OpenBsdPledgeUnveil,
+     WindowsRestrictedToken,
+ }
+ 
+@@ -34,6 +36,8 @@
+             SandboxType::None => "none",
+             SandboxType::MacosSeatbelt => "seatbelt",
+             SandboxType::LinuxSeccomp => "seccomp",
++            #[cfg(target_os = "openbsd")]
++            SandboxType::OpenBsdPledgeUnveil => "openbsd_pledge_unveil",
+             SandboxType::WindowsRestrictedToken => "windows_sandbox",
+         }
+     }
+@@ -51,6 +55,8 @@
+         Some(SandboxType::MacosSeatbelt)
+     } else if cfg!(target_os = "linux") {
+         Some(SandboxType::LinuxSeccomp)
++    } else if cfg!(target_os = "openbsd") {
++        Some(SandboxType::OpenBsdPledgeUnveil)
+     } else if cfg!(target_os = "windows") {
+         if windows_sandbox_enabled {
+             Some(SandboxType::WindowsRestrictedToken)
+@@ -111,6 +117,8 @@
+     MissingLinuxSandboxExecutable,
+     #[cfg(target_os = "linux")]
+     Wsl1UnsupportedForBubblewrap,
++    #[cfg(target_os = "openbsd")]
++    OpenBsdManagedNetworkUnavailable,
+     #[cfg(not(target_os = "macos"))]
+     SeatbeltUnavailable,
+ }
+@@ -123,6 +131,11 @@
+             }
+             #[cfg(target_os = "linux")]
+             Self::Wsl1UnsupportedForBubblewrap => write!(f, "{WSL1_BWRAP_WARNING}"),
++            #[cfg(target_os = "openbsd")]
++            Self::OpenBsdManagedNetworkUnavailable => write!(
++                f,
++                "OpenBSD sandbox does not yet support managed network proxy enforcement"
++            ),
+             #[cfg(not(target_os = "macos"))]
+             Self::SeatbeltUnavailable => write!(f, "seatbelt sandbox is only available on macOS"),
+         }
+@@ -249,6 +262,13 @@
+                 full_command.push(os_string_to_command_component(exe.as_os_str().to_owned()));
+                 full_command.append(&mut args);
+                 (full_command, Some(linux_sandbox_arg0_override(exe)))
++            }
++            #[cfg(target_os = "openbsd")]
++            SandboxType::OpenBsdPledgeUnveil => {
++                if enforce_managed_network {
++                    return Err(SandboxTransformError::OpenBsdManagedNetworkUnavailable);
++                }
++                (os_argv_to_strings(argv), None)
+             }
+             #[cfg(target_os = "windows")]
+             SandboxType::WindowsRestrictedToken => (os_argv_to_strings(argv), None),

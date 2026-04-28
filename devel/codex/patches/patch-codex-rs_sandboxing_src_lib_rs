@@ -1,0 +1,16 @@
+Map the OpenBSD sandbox transform failure into the existing Codex error surface.
+
+Index: codex-rs/sandboxing/src/lib.rs
+--- codex-rs/sandboxing/src/lib.rs.orig
++++ codex-rs/sandboxing/src/lib.rs
+@@ -38,6 +38,10 @@
+             SandboxTransformError::Wsl1UnsupportedForBubblewrap => {
+                 CodexErr::UnsupportedOperation(crate::bwrap::WSL1_BWRAP_WARNING.to_string())
+             }
++            #[cfg(target_os = "openbsd")]
++            SandboxTransformError::OpenBsdManagedNetworkUnavailable => {
++                CodexErr::UnsupportedOperation(err.to_string())
++            }
+             #[cfg(not(target_os = "macos"))]
+             SandboxTransformError::SeatbeltUnavailable => CodexErr::UnsupportedOperation(
+                 "seatbelt sandbox is only available on macOS".to_string(),

@@ -1,0 +1,13 @@
+Update unified exec request fixtures for the sandbox policy cwd.
+
+Index: codex-rs/core/src/unified_exec/process_manager_tests.rs
+--- codex-rs/core/src/unified_exec/process_manager_tests.rs.orig
++++ codex-rs/core/src/unified_exec/process_manager_tests.rs
+@@ -96,6 +96,7 @@
+         expiration: crate::exec::ExecExpiration::DefaultTimeout,
+         capture_policy: crate::exec::ExecCapturePolicy::ShellTool,
+         sandbox: codex_sandboxing::SandboxType::None,
++        sandbox_policy_cwd: cwd.clone(),
+         windows_sandbox_policy_cwd: cwd,
+         windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel::Disabled,
+         windows_sandbox_private_desktop: false,

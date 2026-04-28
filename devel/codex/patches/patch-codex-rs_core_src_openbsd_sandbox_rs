@@ -1,0 +1,390 @@
+Implement the OpenBSD pledge/unveil sandbox profile builder and child-process enforcement.
+
+Index: codex-rs/core/src/openbsd_sandbox.rs
+--- /dev/null
++++ codex-rs/core/src/openbsd_sandbox.rs
+@@ -0,0 +1,384 @@
++use codex_protocol::permissions::FileSystemSandboxPolicy;
++use codex_protocol::permissions::NetworkSandboxPolicy;
++use codex_utils_absolute_path::AbsolutePathBuf;
++use std::collections::BTreeMap;
++use std::ffi::CString;
++use std::io;
++use std::os::unix::ffi::OsStrExt;
++use std::path::Path;
++use std::path::PathBuf;
++
++#[derive(Debug)]
++pub(crate) struct OpenBsdSandboxProfile {
++    unveil_rules: Vec<PreparedUnveilRule>,
++    promises: CString,
++    exec_promises: CString,
++}
++
++impl OpenBsdSandboxProfile {
++    pub(crate) fn new(
++        file_system_policy: &FileSystemSandboxPolicy,
++        network_policy: NetworkSandboxPolicy,
++        sandbox_policy_cwd: &AbsolutePathBuf,
++    ) -> io::Result<Self> {
++        let plan = build_plan(
++            file_system_policy,
++            network_policy,
++            sandbox_policy_cwd.as_path(),
++        );
++        Self::from_plan(plan)
++    }
++
++    fn from_plan(plan: OpenBsdSandboxPlan) -> io::Result<Self> {
++        let unveil_rules = plan
++            .unveil_rules
++            .into_iter()
++            .map(PreparedUnveilRule::try_from)
++            .collect::<io::Result<Vec<_>>>()?;
++        let promises = CString::new(plan.promises).map_err(nul_error)?;
++        let exec_promises = CString::new(plan.exec_promises).map_err(nul_error)?;
++
++        Ok(Self {
++            unveil_rules,
++            promises,
++            exec_promises,
++        })
++    }
++}
++
++#[derive(Debug)]
++struct PreparedUnveilRule {
++    path: CString,
++    permissions: CString,
++}
++
++impl TryFrom<UnveilRule> for PreparedUnveilRule {
++    type Error = io::Error;
++
++    fn try_from(rule: UnveilRule) -> io::Result<Self> {
++        Ok(Self {
++            path: CString::new(rule.path.as_os_str().as_bytes()).map_err(nul_error)?,
++            permissions: CString::new(rule.permissions.as_str()).map_err(nul_error)?,
++        })
++    }
++}
++
++fn nul_error(err: std::ffi::NulError) -> io::Error {
++    io::Error::new(io::ErrorKind::InvalidInput, err)
++}
++
++pub(crate) fn apply_child_sandbox(profile: &OpenBsdSandboxProfile) -> io::Result<()> {
++    for rule in &profile.unveil_rules {
++        let rc = unsafe { libc::unveil(rule.path.as_ptr(), rule.permissions.as_ptr()) };
++        if rc != 0 {
++            return Err(io::Error::last_os_error());
++        }
++    }
++
++    if !profile.unveil_rules.is_empty() {
++        let rc = unsafe { libc::unveil(std::ptr::null(), std::ptr::null()) };
++        if rc != 0 {
++            return Err(io::Error::last_os_error());
++        }
++    }
++
++    let rc = unsafe { libc::pledge(profile.promises.as_ptr(), profile.exec_promises.as_ptr()) };
++    if rc != 0 {
++        return Err(io::Error::last_os_error());
++    }
++
++    Ok(())
++}
++
++#[derive(Clone, Debug, PartialEq, Eq)]
++struct OpenBsdSandboxPlan {
++    unveil_rules: Vec<UnveilRule>,
++    promises: String,
++    exec_promises: String,
++}
++
++#[derive(Clone, Debug, PartialEq, Eq)]
++struct UnveilRule {
++    path: PathBuf,
++    permissions: String,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
++enum UnveilPermissions {
++    ReadExecute,
++    ReadWriteCreateExecute,
++    None,
++}
++
++impl UnveilPermissions {
++    fn as_str(self) -> &'static str {
++        match self {
++            Self::ReadExecute => "rx",
++            Self::ReadWriteCreateExecute => "rwcx",
++            Self::None => "",
++        }
++    }
++}
++
++fn build_plan(
++    file_system_policy: &FileSystemSandboxPolicy,
++    network_policy: NetworkSandboxPolicy,
++    sandbox_policy_cwd: &Path,
++) -> OpenBsdSandboxPlan {
++    let mut builder = UnveilRuleBuilder::default();
++
++    if !file_system_policy.has_full_disk_write_access() {
++        if file_system_policy.has_full_disk_read_access() {
++            builder.add(Path::new("/"), UnveilPermissions::ReadExecute);
++        } else {
++            add_openbsd_platform_baseline(&mut builder);
++            if file_system_policy.include_platform_defaults() {
++                add_openbsd_platform_defaults(&mut builder);
++            }
++            for root in file_system_policy.get_readable_roots_with_cwd(sandbox_policy_cwd) {
++                builder.add(root.as_path(), UnveilPermissions::ReadExecute);
++            }
++        }
++
++        for writable_root in file_system_policy.get_writable_roots_with_cwd(sandbox_policy_cwd) {
++            builder.add(
++                writable_root.root.as_path(),
++                UnveilPermissions::ReadWriteCreateExecute,
++            );
++            for read_only_subpath in writable_root.read_only_subpaths {
++                builder.add(read_only_subpath.as_path(), UnveilPermissions::ReadExecute);
++            }
++        }
++
++        for unreadable_root in file_system_policy.get_unreadable_roots_with_cwd(sandbox_policy_cwd)
++        {
++            builder.add(unreadable_root.as_path(), UnveilPermissions::None);
++        }
++    }
++
++    let promises = pledge_promises(file_system_policy, network_policy, sandbox_policy_cwd);
++    let promises = promises.join(" ");
++
++    OpenBsdSandboxPlan {
++        unveil_rules: builder.into_rules(),
++        promises: promises.clone(),
++        exec_promises: promises,
++    }
++}
++
++#[derive(Default)]
++struct UnveilRuleBuilder {
++    rules: BTreeMap<PathBuf, UnveilPermissions>,
++}
++
++impl UnveilRuleBuilder {
++    fn add(&mut self, path: &Path, permissions: UnveilPermissions) {
++        self.rules
++            .entry(path.to_path_buf())
++            .and_modify(|existing| *existing = (*existing).max(permissions))
++            .or_insert(permissions);
++    }
++
++    fn add_existing(&mut self, path: &str, permissions: UnveilPermissions) {
++        let path = Path::new(path);
++        if path.exists() {
++            self.add(path, permissions);
++        }
++    }
++
++    fn into_rules(self) -> Vec<UnveilRule> {
++        let mut rules = self
++            .rules
++            .into_iter()
++            .map(|(path, permissions)| UnveilRule {
++                path,
++                permissions: permissions.as_str().to_string(),
++            })
++            .collect::<Vec<_>>();
++        // Install narrower rules first so later broader rules do not make a
++        // more specific writable or deny carveout look like a permission increase.
++        rules.sort_by(|left, right| {
++            path_depth(&right.path)
++                .cmp(&path_depth(&left.path))
++                .then_with(|| left.path.cmp(&right.path))
++        });
++        rules
++    }
++}
++
++fn path_depth(path: &Path) -> usize {
++    path.components().count()
++}
++
++fn add_openbsd_platform_baseline(builder: &mut UnveilRuleBuilder) {
++    for path in [
++        "/bin",
++        "/sbin",
++        "/usr/bin",
++        "/usr/sbin",
++        "/usr/local/bin",
++        "/usr/libexec",
++        "/usr/local/libexec",
++    ] {
++        builder.add_existing(path, UnveilPermissions::ReadExecute);
++    }
++
++    for path in [
++        "/etc",
++        "/usr/lib",
++        "/usr/local/lib",
++        "/usr/share/zoneinfo",
++        "/usr/share/misc",
++        "/var/run",
++    ] {
++        builder.add_existing(path, UnveilPermissions::ReadExecute);
++    }
++
++    for path in ["/dev/null", "/dev/zero"] {
++        builder.add_existing(path, UnveilPermissions::ReadWriteCreateExecute);
++    }
++    for path in ["/dev/random", "/dev/urandom", "/dev/arandom"] {
++        builder.add_existing(path, UnveilPermissions::ReadExecute);
++    }
++}
++
++fn add_openbsd_platform_defaults(builder: &mut UnveilRuleBuilder) {
++    for path in ["/tmp", "/var/tmp"] {
++        builder.add_existing(path, UnveilPermissions::ReadWriteCreateExecute);
++    }
++}
++
++fn pledge_promises(
++    file_system_policy: &FileSystemSandboxPolicy,
++    network_policy: NetworkSandboxPolicy,
++    sandbox_policy_cwd: &Path,
++) -> Vec<&'static str> {
++    let mut promises = vec![
++        "stdio",
++        "rpath",
++        "getpw",
++        "proc",
++        "exec",
++        "prot_exec",
++        "error",
++    ];
++
++    if file_system_policy.has_full_disk_write_access()
++        || !file_system_policy
++            .get_writable_roots_with_cwd(sandbox_policy_cwd)
++            .is_empty()
++    {
++        promises.extend(["wpath", "cpath", "fattr", "flock"]);
++    }
++
++    if network_policy.is_enabled() {
++        promises.extend(["inet", "dns", "unix"]);
++    }
++
++    promises
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use codex_protocol::permissions::FileSystemAccessMode;
++    use codex_protocol::permissions::FileSystemPath;
++    use codex_protocol::permissions::FileSystemSandboxEntry;
++    use std::fs;
++    use std::os::unix::process::CommandExt;
++    use std::process::Command;
++    use tempfile::TempDir;
++
++    #[test]
++    fn workspace_write_plan_maps_read_only_subpaths_to_narrower_unveils() {
++        let temp_dir = TempDir::new().expect("temp dir");
++        let root = AbsolutePathBuf::from_absolute_path(temp_dir.path()).expect("absolute root");
++        let git_dir = root.join(".git");
++        fs::create_dir(git_dir.as_path()).expect("create .git");
++
++        let policy = FileSystemSandboxPolicy::restricted(vec![
++            FileSystemSandboxEntry {
++                path: FileSystemPath::Path { path: root.clone() },
++                access: FileSystemAccessMode::Write,
++            },
++            FileSystemSandboxEntry {
++                path: FileSystemPath::Path {
++                    path: git_dir.clone(),
++                },
++                access: FileSystemAccessMode::Read,
++            },
++        ]);
++
++        let plan = build_plan(&policy, NetworkSandboxPolicy::Restricted, root.as_path());
++
++        assert!(
++            plan.unveil_rules
++                .iter()
++                .any(|rule| rule.path == root.as_path() && rule.permissions == "rwcx")
++        );
++        assert!(
++            plan.unveil_rules
++                .iter()
++                .any(|rule| rule.path == git_dir.as_path() && rule.permissions == "rx")
++        );
++        assert!(!plan.promises.contains(" inet"));
++        assert!(plan.promises.contains(" wpath"));
++    }
++
++    #[test]
++    fn enabled_network_adds_network_promises() {
++        let policy = FileSystemSandboxPolicy::unrestricted();
++        let cwd = AbsolutePathBuf::current_dir().expect("cwd");
++
++        let plan = build_plan(&policy, NetworkSandboxPolicy::Enabled, cwd.as_path());
++
++        assert!(plan.unveil_rules.is_empty());
++        assert!(plan.promises.contains(" inet"));
++        assert!(plan.promises.contains(" dns"));
++        assert!(plan.promises.contains(" unix"));
++    }
++
++    #[test]
++    fn apply_child_sandbox_prevents_writes_to_read_only_carveouts() {
++        let temp_dir = TempDir::new().expect("temp dir");
++        let root = AbsolutePathBuf::from_absolute_path(temp_dir.path()).expect("absolute root");
++        let git_dir = root.join(".git");
++        fs::create_dir(git_dir.as_path()).expect("create .git");
++
++        let policy = FileSystemSandboxPolicy::restricted(vec![
++            FileSystemSandboxEntry {
++                path: FileSystemPath::Special {
++                    value: codex_protocol::permissions::FileSystemSpecialPath::Root,
++                },
++                access: FileSystemAccessMode::Read,
++            },
++            FileSystemSandboxEntry {
++                path: FileSystemPath::Path { path: root.clone() },
++                access: FileSystemAccessMode::Write,
++            },
++            FileSystemSandboxEntry {
++                path: FileSystemPath::Path { path: git_dir },
++                access: FileSystemAccessMode::Read,
++            },
++        ]);
++        let profile = OpenBsdSandboxProfile::new(&policy, NetworkSandboxPolicy::Restricted, &root)
++            .expect("profile");
++
++        let mut command = Command::new("/bin/sh");
++        command
++            .arg("-c")
++            .arg("echo ok > allowed && echo denied > .git/blocked")
++            .current_dir(root.as_path());
++        unsafe {
++            command.pre_exec(move || apply_child_sandbox(&profile));
++        }
++
++        let output = command.output().expect("spawn shell");
++        assert!(!output.status.success());
++        assert_eq!(
++            fs::read_to_string(root.join("allowed").as_path()).expect("allowed write"),
++            "ok\n"
++        );
++        assert!(!root.join(".git/blocked").as_path().exists());
++    }
++}

@@ -1,0 +1,93 @@
+Allow unified exec pipe spawns to install a Unix child pre-exec hook.
+
+Index: codex-rs/utils/pty/src/pipe.rs
+--- codex-rs/utils/pty/src/pipe.rs.orig
++++ codex-rs/utils/pty/src/pipe.rs
+@@ -24,6 +24,9 @@
+ #[cfg(target_os = "linux")]
+ use libc;
+ 
++#[cfg(unix)]
++pub type ChildPreExec = Box<dyn FnMut() -> io::Result<()> + Send + Sync + 'static>;
++
+ struct PipeChildTerminator {
+     #[cfg(windows)]
+     pid: u32,
+@@ -91,6 +94,7 @@
+     Null,
+ }
+ 
++#[allow(clippy::too_many_arguments)]
+ async fn spawn_process_with_stdin_mode(
+     program: &str,
+     args: &[String],
+@@ -99,6 +103,7 @@
+     arg0: &Option<String>,
+     stdin_mode: PipeStdinMode,
+     inherited_fds: &[i32],
++    #[cfg(unix)] mut child_pre_exec: Option<ChildPreExec>,
+ ) -> Result<SpawnedProcess> {
+     if program.is_empty() {
+         anyhow::bail!("missing program for pipe spawn");
+@@ -123,6 +128,9 @@
+             #[cfg(target_os = "linux")]
+             crate::process_group::set_parent_death_signal(parent_pid)?;
+             crate::pty::close_inherited_fds_except(&inherited_fds);
++            if let Some(child_pre_exec) = child_pre_exec.as_mut() {
++                child_pre_exec()?;
++            }
+             Ok(())
+         });
+     }
+@@ -253,7 +261,18 @@
+     env: &HashMap<String, String>,
+     arg0: &Option<String>,
+ ) -> Result<SpawnedProcess> {
+-    spawn_process_with_stdin_mode(program, args, cwd, env, arg0, PipeStdinMode::Piped, &[]).await
++    spawn_process_with_stdin_mode(
++        program,
++        args,
++        cwd,
++        env,
++        arg0,
++        PipeStdinMode::Piped,
++        &[],
++        #[cfg(unix)]
++        None,
++    )
++    .await
+ }
+ 
+ /// Spawn a process using regular pipes, but close stdin immediately.
+@@ -285,6 +304,31 @@
+         arg0,
+         PipeStdinMode::Null,
+         inherited_fds,
++        #[cfg(unix)]
++        None,
++    )
++    .await
++}
++
++#[cfg(unix)]
++pub async fn spawn_process_no_stdin_with_inherited_fds_and_pre_exec(
++    program: &str,
++    args: &[String],
++    cwd: &Path,
++    env: &HashMap<String, String>,
++    arg0: &Option<String>,
++    inherited_fds: &[i32],
++    child_pre_exec: ChildPreExec,
++) -> Result<SpawnedProcess> {
++    spawn_process_with_stdin_mode(
++        program,
++        args,
++        cwd,
++        env,
++        arg0,
++        PipeStdinMode::Null,
++        inherited_fds,
++        Some(child_pre_exec),
+     )
+     .await
+ }

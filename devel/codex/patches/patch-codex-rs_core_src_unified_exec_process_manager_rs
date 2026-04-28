@@ -1,0 +1,50 @@
+Apply OpenBSD sandbox profiles to non-PTY unified exec children.
+
+Index: codex-rs/core/src/unified_exec/process_manager.rs
+--- codex-rs/core/src/unified_exec/process_manager.rs.orig
++++ codex-rs/core/src/unified_exec/process_manager.rs
+@@ -715,6 +715,44 @@
+             )
+             .await;
+         }
++        #[cfg(target_os = "openbsd")]
++        if request.sandbox == codex_sandboxing::SandboxType::OpenBsdPledgeUnveil {
++            if tty {
++                return Err(UnifiedExecError::create_process(
++                    "OpenBSD sandbox does not yet support PTY-backed unified exec sessions"
++                        .to_string(),
++                ));
++            }
++            let profile = crate::openbsd_sandbox::OpenBsdSandboxProfile::new(
++                &request.file_system_sandbox_policy,
++                request.network_sandbox_policy,
++                &request.sandbox_policy_cwd,
++            )
++            .map_err(|err| {
++                UnifiedExecError::create_process(format!(
++                    "failed to prepare OpenBSD sandbox: {err}"
++                ))
++            })?;
++            let (program, args) = request
++                .command
++                .split_first()
++                .ok_or(UnifiedExecError::MissingCommandLine)?;
++            let spawned =
++                codex_utils_pty::pipe::spawn_process_no_stdin_with_inherited_fds_and_pre_exec(
++                    program,
++                    args,
++                    request.cwd.as_path(),
++                    &request.env,
++                    &request.arg0,
++                    &inherited_fds,
++                    Box::new(move || crate::openbsd_sandbox::apply_child_sandbox(&profile)),
++                )
++                .await
++                .map_err(|err| UnifiedExecError::create_process(err.to_string()))?;
++            spawn_lifecycle.after_spawn();
++            return UnifiedExecProcess::from_spawned(spawned, request.sandbox, spawn_lifecycle)
++                .await;
++        }
+         if environment.is_remote() {
+             if !inherited_fds.is_empty() {
+                 return Err(UnifiedExecError::create_process(
