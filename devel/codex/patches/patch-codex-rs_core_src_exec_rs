@@ -3,7 +3,7 @@ Prepare and pass OpenBSD sandbox profiles through the direct shell exec path.
 Index: codex-rs/core/src/exec.rs
 --- codex-rs/core/src/exec.rs.orig
 +++ codex-rs/core/src/exec.rs
-@@ -361,16 +361,29 @@
+@@ -430,15 +430,29 @@
          expiration,
          capture_policy,
          sandbox,
@@ -11,8 +11,7 @@ Index: codex-rs/core/src/exec.rs
          windows_sandbox_policy_cwd: _,
          windows_sandbox_level,
          windows_sandbox_private_desktop,
-         sandbox_policy,
--        // TODO(mbolin): Use file_system_sandbox_policy instead of sandbox_policy.
+         permission_profile: _,
 -        file_system_sandbox_policy: _,
 +        file_system_sandbox_policy,
          network_sandbox_policy,

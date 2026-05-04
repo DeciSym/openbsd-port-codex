@@ -36,6 +36,15 @@ Index: codex-rs/sandboxing/src/manager_tests.rs
 +fn transform_openbsd_sandbox_keeps_command_for_child_pre_exec_enforcement() {
 +    let manager = SandboxManager::new();
 +    let cwd = AbsolutePathBuf::current_dir().expect("current dir");
++    let permissions = PermissionProfile::from_runtime_permissions(
++        &FileSystemSandboxPolicy::restricted(vec![FileSystemSandboxEntry {
++            path: FileSystemPath::Special {
++                value: FileSystemSpecialPath::Root,
++            },
++            access: FileSystemAccessMode::Read,
++        }]),
++        NetworkSandboxPolicy::Restricted,
++    );
 +    let exec_request = manager
 +        .transform(SandboxTransformRequest {
 +            command: SandboxCommand {
@@ -45,11 +54,7 @@ Index: codex-rs/sandboxing/src/manager_tests.rs
 +                env: HashMap::new(),
 +                additional_permissions: None,
 +            },
-+            policy: &SandboxPolicy::new_read_only_policy(),
-+            file_system_policy: &FileSystemSandboxPolicy::from(
-+                &SandboxPolicy::new_read_only_policy(),
-+            ),
-+            network_policy: NetworkSandboxPolicy::Restricted,
++            permissions: &permissions,
 +            sandbox: SandboxType::OpenBsdPledgeUnveil,
 +            enforce_managed_network: false,
 +            network: None,
@@ -74,6 +79,10 @@ Index: codex-rs/sandboxing/src/manager_tests.rs
 +fn transform_openbsd_sandbox_fails_closed_for_managed_network() {
 +    let manager = SandboxManager::new();
 +    let cwd = AbsolutePathBuf::current_dir().expect("current dir");
++    let permissions = PermissionProfile::from_runtime_permissions(
++        &FileSystemSandboxPolicy::unrestricted(),
++        NetworkSandboxPolicy::Enabled,
++    );
 +    let err = manager
 +        .transform(SandboxTransformRequest {
 +            command: SandboxCommand {
@@ -83,9 +92,7 @@ Index: codex-rs/sandboxing/src/manager_tests.rs
 +                env: HashMap::new(),
 +                additional_permissions: None,
 +            },
-+            policy: &SandboxPolicy::DangerFullAccess,
-+            file_system_policy: &FileSystemSandboxPolicy::unrestricted(),
-+            network_policy: NetworkSandboxPolicy::Enabled,
++            permissions: &permissions,
 +            sandbox: SandboxType::OpenBsdPledgeUnveil,
 +            enforce_managed_network: true,
 +            network: None,

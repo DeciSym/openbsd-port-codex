@@ -881,6 +881,7 @@ SHA256 (cargo/system-configuration-0.7.0.tar.gz) = oT89DaugMTLAqpdn+YNRs0iO3CwQD
 SHA256 (cargo/system-configuration-sys-0.6.0.tar.gz) = jh0bEM7VypI6H8uNA+lrjTJoBl1yRUjAIRQV/2rGusQ=
 SHA256 (cargo/system-deps-7.0.7.tar.gz) = SMjzNzb5hvFtabbLiwP1XdytXEGsxMzDndiOhKqAXn8=
 SHA256 (cargo/tagptr-0.2.0.tar.gz) = eyCTz0yOseZ3SaZ2IlG8nNg2tvwXFiO9Cp0yTTevJBc=
+SHA256 (cargo/tar-0.4.45.tar.gz) = ImkqZHaiH6df38EdRS/aSCr0AsAIzbrzR2QU4SIECXM=
 SHA256 (cargo/target-lexicon-0.13.3.tar.gz) = 339iV3wl4Hg0ZJ/Ds5+v3Fl8CjUn3BxgEpIBzPy6pQw=
 SHA256 (cargo/tempfile-3.27.0.tar.gz) = Mkl+mkx7OFMu/N6+74eXB6qfeUKWpPAkT29p6byFdL0=
 SHA256 (cargo/temporal_capi-0.1.2.tar.gz) = oVHkAsK9tqOiovPyJe3a6tLnzn3V0/ogkN6xGxeqTtg=
@@ -1145,7 +1146,7 @@ SHA256 (helix-editor-nucleo-4253de9faabb4e5c6d81d946a5e35a90f87347ee.tar.gz) = 0
 SHA256 (juberti-oai-rust-sdks-e2d1d1d230c6fc9df171ccb181423f957bb3c1f0.tar.gz) = L7IlZYsCuOkY6rBvaupMHBumWuUZHaeA4EpfhM3Umqc=
 SHA256 (nornagon-crossterm-87db8bfa6dc99427fd3b071681b07fc31c6ce995.tar.gz) = tJrDQua12cAV9ThGkMKmHW8xwMPDSq8cwivklWEiKUw=
 SHA256 (nornagon-ratatui-9b2ad1298408c45918ee9f8241a6f95498cdbed2.tar.gz) = slLAIUXlq7/BcEZniLvutTozZfy8ilYh8o95ut0fanA=
-SHA256 (openai-codex-rust-v0.125.0.tar.gz) = HiCyIertwgE1p2uJf/U2vI+gAh1bn/E+a/dUMGCpF2Y=
+SHA256 (openai-codex-rust-v0.128.0.tar.gz) = f6BVcLubPmWmkLtYkz0mvLgEt3f/Y/9dgxAnNUN04Ec=
 SHA256 (openai-oss-forks-tokio-tungstenite-132f5b39c862e3a970f731d709608b3e6276d5f6.tar.gz) = 1TPWV+/M8npsEchhFJmLGnd9UkNpbRnaLhgHKb2nxH0=
 SHA256 (openai-oss-forks-tungstenite-rs-9200079d3b54a1ff51072e24d81fd354f085156f.tar.gz) = pm7OW230fR9e8D0JibP2kxyXLB1okFE/rzrH6O8B2ho=
 SIZE (cargo/Inflector-0.11.4.tar.gz) = 17438
@@ -2031,6 +2032,7 @@ SIZE (cargo/system-configuration-0.7.0.tar.gz) = 18064
 SIZE (cargo/system-configuration-sys-0.6.0.tar.gz) = 11090
 SIZE (cargo/system-deps-7.0.7.tar.gz) = 28941
 SIZE (cargo/tagptr-0.2.0.tar.gz) = 13320
+SIZE (cargo/tar-0.4.45.tar.gz) = 67847
 SIZE (cargo/target-lexicon-0.13.3.tar.gz) = 28498
 SIZE (cargo/tempfile-3.27.0.tar.gz) = 44780
 SIZE (cargo/temporal_capi-0.1.2.tar.gz) = 75354
@@ -2295,6 +2297,6 @@ SIZE (helix-editor-nucleo-4253de9faabb4e5c6d81d946a5e35a90f87347ee.tar.gz) = 867
 SIZE (juberti-oai-rust-sdks-e2d1d1d230c6fc9df171ccb181423f957bb3c1f0.tar.gz) = 9672900
 SIZE (nornagon-crossterm-87db8bfa6dc99427fd3b071681b07fc31c6ce995.tar.gz) = 129254
 SIZE (nornagon-ratatui-9b2ad1298408c45918ee9f8241a6f95498cdbed2.tar.gz) = 566574
-SIZE (openai-codex-rust-v0.125.0.tar.gz) = 7032117
+SIZE (openai-codex-rust-v0.128.0.tar.gz) = 7297632
 SIZE (openai-oss-forks-tokio-tungstenite-132f5b39c862e3a970f731d709608b3e6276d5f6.tar.gz) = 31620
 SIZE (openai-oss-forks-tungstenite-rs-9200079d3b54a1ff51072e24d81fd354f085156f.tar.gz) = 293929

@@ -3,19 +3,19 @@ Omit code-mode service test setup on OpenBSD.
 Index: codex-rs/core/src/session/tests.rs
 --- codex-rs/core/src/session/tests.rs.orig
 +++ codex-rs/core/src/session/tests.rs
-@@ -3324,6 +3324,7 @@ pub(crate) async fn make_session_and_context() -> (Ses
+@@ -3555,6 +3555,7 @@ pub(crate) async fn make_session_and_context() -> (Ses
              config.features.enabled(Feature::RuntimeMetrics),
              Session::build_model_client_beta_features_header(config.as_ref()),
          ),
 +        #[cfg(not(target_os = "openbsd"))]
-         code_mode_service: crate::tools::code_mode::CodeModeService::new(
-             config.js_repl_node_path.clone(),
-         ),
-@@ -4687,6 +4688,7 @@ pub(crate) async fn make_session_and_context_with_dyna
+         code_mode_service: crate::tools::code_mode::CodeModeService::new(),
+         environment_manager: Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+     };
+@@ -4984,6 +4985,7 @@ pub(crate) async fn make_session_and_context_with_dyna
              config.features.enabled(Feature::RuntimeMetrics),
              Session::build_model_client_beta_features_header(config.as_ref()),
          ),
 +        #[cfg(not(target_os = "openbsd"))]
-         code_mode_service: crate::tools::code_mode::CodeModeService::new(
-             config.js_repl_node_path.clone(),
-         ),
+         code_mode_service: crate::tools::code_mode::CodeModeService::new(),
+         environment_manager: Arc::new(codex_exec_server::EnvironmentManager::default_for_tests()),
+     };

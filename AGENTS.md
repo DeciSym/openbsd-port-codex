@@ -216,6 +216,89 @@ is disabled on OpenBSD. Exclude that test module on OpenBSD with
 `#[cfg(all(test, not(target_os = "openbsd")))]` rather than restoring
 the disabled code-mode module.
 
+During the 0.128.0 sandbox update, add new release work on this branch
+to the `sandbox` flavor, not only `all_features`. The `sandbox` flavor
+should build and test with the same `--all-features` arguments as
+`all_features`, while also carrying the branch's OpenBSD sandbox
+patches.
+
+During the 0.128.0 sandbox update, upstream changed
+`sandboxing::SandboxTransformRequest` to take
+`permissions: &PermissionProfile`. Refresh OpenBSD-added sandbox
+manager tests to construct a `PermissionProfile` and pass it through
+`permissions`, not through the old `policy`, `file_system_policy`, or
+`network_policy` fields.
+
+During the 0.128.0 sandbox update, `codex-tui`
+`status_snapshot_shows_active_user_defined_profile` and
+`status_snapshot_shows_auto_review_permissions` failed in packaged
+release tests because the snapshots expected source-build version
+`v0.0.0` while the OpenBSD package correctly rendered `v0.128.0`.
+Treat those as the same packaged-build snapshot-mismatch class as the
+earlier TUI status snapshot skip.
+
+During the 0.128.0 sandbox update, `codex-app-server` release doctests
+imported debug-only `codex_thread_store::InMemoryThreadStore`. Exclude
+`codex-app-server` from the blanket workspace doctest pass and run it
+through a targeted `-p codex-app-server --lib --bins` pass instead.
+
+During the 0.128.0 sandbox update, five `codex-app-server` targeted lib
+tests still hit the packaged host-config/default-loader
+`PermissionDenied` class:
+`config_api::tests::batch_write_reloads_user_config_when_requested`,
+`in_process::tests::in_process_allows_device_key_requests_to_reach_device_key_api`,
+`in_process::tests::in_process_start_clamps_zero_channel_capacity`,
+`in_process::tests::in_process_start_initializes_and_handles_typed_v2_request`,
+and
+`in_process::tests::in_process_start_uses_requested_session_source_for_thread_start`.
+Keep those as narrow targeted app-server skips rather than patching
+upstream tests.
+
+Measured timings for the 0.128.0 sandbox update on 2026-05-03:
+- `make makesum`: 9.17s real on the initial release bump; 9.96s real
+  after adding `tar` 0.4.45.
+- `make modcargo-gen-crates`: 56.73s real; the generated crate block
+  differed only by `tar` 0.4.45.
+- final `env FLAVOR=sandbox make checkpatch`: 52.78s real on the first
+  validation pass; 0.77s real after the sandbox manager-test patch
+  refresh; 0.67s real after the TUI skip update; 0.67s real after the
+  app-server doctest recipe change; 0.78s real after the targeted
+  app-server host-config skip list.
+- `env FLAVOR=sandbox make patch`: 62.50s real, used for patch-result
+  inspection.
+- `env FLAVOR=sandbox make port-lib-depends-check`: 1606.17s real; the
+  workspace release build phase reported `Finished 'release' profile
+  [optimized] target(s) in 26m 39s`.
+- `env FLAVOR=sandbox make update-plist`: 2.06s real.
+- `env FLAVOR=sandbox make package`: 16.72s real; produced
+  `.packages/amd64/all/codex-0.128.0-sandbox.tgz`.
+- first `env FLAVOR=sandbox make test`: 641.50s real; failed compiling
+  `codex-sandboxing` lib tests because the OpenBSD-added manager tests
+  still used pre-0.128.0 `SandboxTransformRequest` fields.
+- second `env FLAVOR=sandbox make test`: 1295.63s real; the workspace
+  release build reported `Finished 'release' profile [optimized]
+  target(s) in 20m 37s` and then failed at two packaged-version
+  `codex-tui` status snapshots.
+- hot `env FLAVOR=sandbox make test` after the TUI skip update: 70.84s
+  real; failed in the `codex-app-server` release doctest pass because
+  it imported debug-only `InMemoryThreadStore`.
+- `env FLAVOR=sandbox make test` after the app-server doctest recipe
+  change: 2201.41s real; the workspace release build reported
+  `Finished 'release' profile [optimized] target(s) in 20m 31s`, the
+  targeted `codex-app-server` release build reported `Finished
+  'release' profile [optimized] target(s) in 14m 20s`, and then five
+  app-server lib tests failed in the packaged host-config/default-loader
+  class.
+- final `env FLAVOR=sandbox make test`: 2006.14s real; the targeted
+  `codex-core` release rebuild reported `Finished 'release' profile
+  [optimized] target(s) in 15m 03s`, the targeted `codex-exec-server`
+  release rebuild reported `Finished 'release' profile [optimized]
+  target(s) in 6m 04s`, and the targeted `codex-exec` release rebuild
+  reported `Finished 'release' profile [optimized] target(s) in 9m
+  12s`.
+- final `/usr/ports/infrastructure/bin/portcheck -p
+  /home/user/projects/openbsd-port-codex`: 10.81s real.
+
 Measured timings for the 0.125.0 update on 2026-04-27:
 - `make makesum`: 9.47s real
 - `make modcargo-gen-crates`: 58.49s real; the generated crate block

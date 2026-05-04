@@ -883,6 +883,7 @@ MODCARGO_CRATES +=	system-configuration	0.7.0
 MODCARGO_CRATES +=	system-configuration-sys	0.6.0
 MODCARGO_CRATES +=	system-deps	7.0.7
 MODCARGO_CRATES +=	tagptr	0.2.0
+MODCARGO_CRATES +=	tar	0.4.45
 MODCARGO_CRATES +=	target-lexicon	0.13.3
 MODCARGO_CRATES +=	tempfile	3.27.0
 MODCARGO_CRATES +=	temporal_capi	0.1.2

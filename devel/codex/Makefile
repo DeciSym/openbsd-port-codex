@@ -3,7 +3,7 @@ COMMENT =	OpenAI Codex command-line coding agent
 # ring-rs does not support this architecture.
 NOT_FOR_ARCHS =	sparc64
 
-V =		0.125.0
+V =		0.128.0
 DISTNAME =	codex-rust-v${V}
 PKGNAME =	codex-${V}
 
@@ -37,7 +37,7 @@ MAINTAINER =	Donald Anthony Pellegrino Jr., Ph.D. <don@decisym.ai>
 # Apache-2.0
 PERMIT_PACKAGE =	Yes
 
-FLAVORS =	all_features
+FLAVORS =	all_features sandbox
 
 WANTLIB +=	${MODCARGO_WANTLIB} bz2 crypto dbus-1 lzma m onig ssl util z
 
@@ -59,11 +59,12 @@ MODCARGO_CRATES_KEEP +=	zstd-sys
 MODCARGO_BUILD_ARGS +=	--ignore-rust-version
 MODCARGO_TEST_ARGS +=	--ignore-rust-version
 
-.if !empty(FLAVOR:Mall_features)
+.if !empty(FLAVOR:Mall_features) || !empty(FLAVOR:Msandbox)
 MODCARGO_BUILD_ARGS +=	--all-features
 MODCARGO_TEST_ARGS +=	--all-features
 .endif
-MODCARGO_TEST_ARGS +=	--workspace --exclude codex-core --exclude codex-exec \
+MODCARGO_TEST_ARGS +=	--workspace --exclude codex-app-server \
+		--exclude codex-core --exclude codex-exec \
 		--exclude codex-exec-server
 
 # Run workspace tests by default. Tests that require outbound network should
@@ -103,6 +104,8 @@ MODCARGO_TEST_ARGS +=	-- --skip suite:: \
 	${PROMPT_TEST}update_prompt_snapshot \
 	${HISTORY_TEST}session_info_availability_nux_tooltip_snapshot \
 	${STATUS_TEST}uses_default_reasoning_when_config_empty \
+	${STATUS_TEST}shows_active_user_defined_profile \
+	${STATUS_TEST}shows_auto_review_permissions \
 	${STATUS_TEST}cached_limits_hide_credits_without_flag \
 	${STATUS_TEST}includes_credits_and_limits \
 	${STATUS_TEST}includes_forked_from \
@@ -181,9 +184,19 @@ MODCARGO_TEST_ARGS +=	--skip ${_t}
 .endfor
 
 TARGETED_TEST_ARGS =	--ignore-rust-version
-.if !empty(FLAVOR:Mall_features)
+.if !empty(FLAVOR:Mall_features) || !empty(FLAVOR:Msandbox)
 TARGETED_TEST_ARGS +=	--all-features
 .endif
+
+TARGETED_APP_SERVER_TEST_SKIP =
+.for _t in \
+	config_api::tests::batch_write_reloads_user_config_when_requested \
+	${INPROC_BASE_TEST}allows_device_key_requests_to_reach_device_key_api \
+	${INPROC_TEST}clamps_zero_channel_capacity \
+	${INPROC_TEST}initializes_and_handles_typed_v2_request \
+	${INPROC_TEST}uses_requested_session_source_for_thread_start
+TARGETED_APP_SERVER_TEST_SKIP +=	--skip ${_t}
+.endfor
 
 TARGETED_CORE_TEST_SKIP =
 .for _t in \
@@ -226,7 +239,10 @@ do-install:
 .endfor
 
 # Keep the blanket workspace pass on targets that do not need problematic
-# integration binaries. `codex-core` is exercised below with explicit lib/bin
+# integration binaries or doctests. `codex-app-server` is limited to lib/bin
+# tests because its release doctest path imports a debug-only thread-store
+# helper, with narrow packaged host-config skips; `codex-core` is exercised
+# below with explicit lib/bin
 # and standalone integration targets; `codex-exec` is limited to lib/bin tests
 # because upstream's only aggregate integration target currently pulls in a
 # macOS/Linux-only sandbox module that does not compile on OpenBSD;
@@ -235,6 +251,12 @@ do-install:
 # CODEX_HOME, which upstream now rejects outside debug builds.
 do-test:
 	@ulimit -n 1024 && ${MODCARGO_TEST_TARGET}
+	@ulimit -n 1024 && \
+		cd ${WRKSRC} && \
+		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \
+		${MODCARGO_CARGO_BIN} test --manifest-path ${MODCARGO_CARGOTOML} \
+		--release ${TARGETED_TEST_ARGS} -p codex-app-server \
+		--lib --bins -- ${TARGETED_APP_SERVER_TEST_SKIP}
 	@ulimit -n 1024 && \
 		cd ${WRKSRC} && \
 		${SETENV} ${MAKE_ENV} ${MODCARGO_ENV} \

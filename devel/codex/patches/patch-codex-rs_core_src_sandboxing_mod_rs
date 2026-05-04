@@ -20,14 +20,14 @@ Index: codex-rs/core/src/sandboxing/mod.rs
      pub windows_sandbox_policy_cwd: AbsolutePathBuf,
      pub windows_sandbox_level: WindowsSandboxLevel,
      pub windows_sandbox_private_desktop: bool,
-@@ -77,6 +78,7 @@
+@@ -80,6 +81,7 @@
          arg0: Option<String>,
      ) -> Self {
          let windows_sandbox_policy_cwd = cwd.clone();
 +        let sandbox_policy_cwd = cwd.clone();
+         let (file_system_sandbox_policy, network_sandbox_policy) =
+             permission_profile.to_runtime_permissions();
          Self {
-             command,
-             cwd,
 @@ -86,6 +88,7 @@
              expiration,
              capture_policy,
